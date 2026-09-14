@@ -98,5 +98,7 @@ create index idx_purchase_timestamp on olist_orders_dataset_clean(order_purchase
 create index idx_product_category_name on olist_products_dataset_clean(product_category_name);
 
 
+#业务建表
+
 
 

@@ -1,6 +1,8 @@
 # 电商运营管理与智能分析平台
 
 基于 Olist Brazilian E-Commerce Public Dataset 的电商运营后台管理系统。面向电商运营人员/管理人员，提供订单、产品/类目、客户、卖家、物流、库存等运营分析能力，并在业务系统之上叠加 LLM AI 运营助手。
+数据的来源是:https://www.kaggle.com/datasets/mohimohammd/brazilian-e-commerce-public-dataset-by-olist?select=olist_order_payments_dataset.csv
+上面的公开数据集，直接下载zip压缩包然后解压到data文件夹下的raw文件夹内。（2026年9月）
 
 ## 技术栈
 
