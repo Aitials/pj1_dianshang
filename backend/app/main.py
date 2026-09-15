@@ -2,19 +2,25 @@ from fastapi import FastAPI
 from sqlalchemy import select
 from app.repositories.user import get_user
 from app.api.auth import router as auth_router
+from app.api.seller import router as sellers_router
+from app.api.products import router as products_router
 from app.models.user import User
 from app.db.session import Base, engine,SessionLocal
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from fastapi import Depends
+
+
 app = FastAPI()
 
 @app.get("/")
 def shouye():
-    return {"nihao !"}
+    return {"message": "nihao !"}
 
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(sellers_router, prefix="/api/sellers")
+app.include_router(products_router, prefix="/api/products")
 
 Base.metadata.create_all(bind=engine)
 
