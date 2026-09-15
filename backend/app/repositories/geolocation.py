@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.models.products import Product
 
+from app.models.geolocation import Geolocation
 
-def get_products(db: Session, limit: int = 20):
-    stmt = select(Product).limit(limit)
+def get_geolocations(db: Session):
+    stmt = select(Geolocation)
     result = db.execute(stmt)
     return result.scalars().all()

@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
 from app.db.session import get_db
-from app.repositories.seller import get_seller
+from app.repositories.seller import get_sellers
 
 router = APIRouter()
 
-@router.get("/get_sellers")
-def get_sellers(db: Session = Depends(get_db)):
-    sellers = get_seller(db)
+
+@router.get("/sellers")
+def list_sellers(db: Session = Depends(get_db)):
+    sellers = get_sellers(db)
     return {
         "sellers": [
             {
