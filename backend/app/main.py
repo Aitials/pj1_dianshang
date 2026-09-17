@@ -18,9 +18,9 @@ from app.api.logistics import router as logistics_router
 app = FastAPI()
 
 
-@app.get("/")
+@app.get("/healthy")
 def health_check():
-    return {"message": "这里是根目录的测试"}
+    return {"message": "OK"}
 
 
 app.include_router(auth_router, prefix="/api/auth")
