@@ -5,7 +5,6 @@ from app.db.session import Base
 
 class Product(Base):
     __tablename__ = "olist_products_dataset_clean"
-
     product_id = Column(String(35), primary_key=True)
     product_category_name = Column(String(50), nullable=False)
     product_name_length = Column(Integer)

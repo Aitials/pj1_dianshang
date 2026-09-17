@@ -1,15 +1,22 @@
 from sqlalchemy import func, distinct
-from sqlalchemy import select
+from sqlalchemy import select ,func
 from sqlalchemy.orm import Session
 from app.models.order import Order
 from app.models.order_reviews import OrderReview
 from app.models.customer import Customer
 from app.models.order_items import OrderItem
 from app.models.products import Product
+from app.models.order_payments import OrderPayment
 
 
-def count_orders(db : Session):
+def count_orders(db : Session ,order_status =None , start_time = None, end_time = None ):
     stmt = select(func.count(Order.order_id))
+    if order_status is not None:
+        stmt = stmt.where(Order.order_status == order_status)
+    if start_time is not None:
+        stmt = stmt.where(Order.order_purchase_timestamp >= start_time)
+    if end_time is not None:
+        stmt = stmt.where(Order.order_purchase_timestamp <= end_time)
     counts = db.execute(stmt)
     return counts.scalars().one()
 
@@ -104,3 +111,21 @@ def get_sned_time(db):
     ).scalar()
 
     return round(on_time / delivered * 100, 2)
+
+def get_overview(db):
+    total_orders =  select(func.count(Order.order_id))
+    delivered_orders = select(func.count(Order.order_id)).where(
+    Order.order_status == "delivered")
+    canceled_orders = select(func.count(Order.order_id)).where(Order.order_status == "canceled")
+    total_sales = select(func.sum(OrderPayment.payment_value))
+
+    tresult = db.execute(total_orders).scalars().one()
+    dresult = db.execute(delivered_orders).scalars().one()
+    cresult = db.execute(canceled_orders).scalars().one()
+    tsresult = db.execute(total_sales).scalars().one()
+    return {
+        "total_orders": tresult,
+        "delivered_orders": dresult,
+        "canceled_orders": cresult,
+        "total_sales": tsresult,
+    }
