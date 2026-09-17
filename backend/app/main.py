@@ -14,6 +14,7 @@ from app.api.translation import router as tran_router
 from app.api.geolocation import router as geolocation_router
 from app.api.dashboard import router as dashboard_router
 from app.api.inventory import router as inventory_router
+from app.api.logistics import router as logistics_router
 app = FastAPI()
 
 
@@ -34,5 +35,6 @@ app.include_router(tran_router, prefix="/api")
 app.include_router(geolocation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api/dashboard")
 app.include_router(inventory_router, prefix="/api")
+app.include_router(logistics_router, prefix="/api")
 
 Base.metadata.create_all(bind=engine)
