@@ -1,6 +1,7 @@
 from fastapi import APIRouter ,Depends
 from app.db.session import get_db
-from app.repositories.order import get_orders,count_orders
+from app.repositories.order import get_orders
+from app.repositories.dashboard import count_orders
 from sqlalchemy.orm import Session
 router = APIRouter()
 @router.get("/orders")

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.repositories.customer import get_custmoers
+from app.repositories.customer import get_customers
 from app.db.session import get_db
 router = APIRouter()
 
-@router.get('/customer')
+@router.get('/customers')
 def list_customers(db: Session = Depends(get_db)):
-    customers = get_custmoers(db)
+    customers = get_customers(db)
     return {
         "customers" : [
             {
