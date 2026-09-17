@@ -1,20 +1,14 @@
 from fastapi import APIRouter ,Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.repositories.dashboard import count_orders, avg_reviews, count_customers,total_sales,avg_order_value,sales_trend,get_category_ranking,get_seller_ranking,get_sned_time
-
+from app.repositories.dashboard import count_orders, avg_reviews, count_customers,total_sales,avg_order_value,sales_trend,get_category_ranking,get_seller_ranking,get_sned_time,get_overview
+from app.schemas.dashboard import DashboardOverviewResponse
 
 router = APIRouter()
 
-@router.get("/overview")
+@router.get("/overview" , response_model=DashboardOverviewResponse)
 def overview(db: Session = Depends(get_db)):
-    return {
-        "total_orders": count_orders(db),
-        "avg_review_score" : avg_reviews(db),
-        "total_customers" : count_customers(db),
-        "total_sales" : total_sales(db),
-        "avg_order_value" : avg_order_value(db),
-    }
+    return get_overview(db)
 
 @router.get("/trend")
 def trend(db: Session = Depends(get_db)):

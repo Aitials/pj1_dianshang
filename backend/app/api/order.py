@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.db.session import get_db
+from datetime import datetime
 from app.repositories.order import get_orders ,get_order_details
 from app.repositories.order_items import get_orderitemd_byid
 from app.repositories.order_payments import get_payments_byid
@@ -10,9 +11,9 @@ from app.schemas.order import OrderDetailResponse
 from sqlalchemy.orm import Session
 router = APIRouter()
 @router.get("/orders")
-def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20):
-    orders= get_orders(db,page,page_size)
-    counts = count_orders(db)
+def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 , order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
+    orders= get_orders(db,page,page_size ,order_status , start_time, end_time)
+    counts = count_orders(db ,order_status , start_time, end_time)
     return {
         "total": counts,
         "page" : page,
@@ -31,7 +32,7 @@ def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20):
             for o in orders
         ]
     }
-@router.get("/{order_id}", response_model=OrderDetailResponse)
+@router.get("/orders/{order_id}", response_model=OrderDetailResponse)
 def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     order_detail = get_order_details(db,order_id)
     if order_detail is None:

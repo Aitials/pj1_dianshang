@@ -1,16 +1,19 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends ,HTTPException
 from sqlalchemy.orm import Session
-
+from app.schemas.seller import SellerResponse
 from app.db.session import get_db
-from app.repositories.seller import get_sellers
+from app.repositories.seller import get_sellers ,count_sellers
+from app.repositories.seller import get_seller_byid
 
 router = APIRouter()
 
 
 @router.get("/sellers")
-def list_sellers(db: Session = Depends(get_db)):
-    sellers = get_sellers(db)
+def list_sellers(page:int ,page_size :int,seller_city:str | None = None,seller_state :str | None = None ,db: Session = Depends(get_db)):
+    sellers = get_sellers(page ,page_size,seller_city,seller_state,db)
+    count = count_sellers(seller_city,seller_state,db)
     return {
+        "total":count,
         "sellers": [
             {
                 "seller_id": s.seller_id,
@@ -21,3 +24,11 @@ def list_sellers(db: Session = Depends(get_db)):
             for s in sellers
         ]
     }
+
+@router.get("/sellers/{seller_id}" , response_model=SellerResponse)
+def list_seller(seller_id: str, db: Session = Depends(get_db)):
+    sellers = get_seller_byid(db, seller_id)
+    if sellers is None:
+        raise HTTPException(status_code=404, detail="Seller Not Found !")
+    return sellers
+
