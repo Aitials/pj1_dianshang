@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.repositories.customer import get_customers
+from app.repositories.customer import get_customers , get_customer_by_id
+
 from app.db.session import get_db
 router = APIRouter()
 
@@ -18,6 +19,13 @@ def list_customers(db: Session = Depends(get_db)):
             }
             for c in customers
         ]
+    }
+
+@router.get('/{customer_id}')
+def list_customerbyid( customer_id: str ,db: Session = Depends(get_db)):
+    customers = get_customer_by_id(db,customer_id)
+    return {
+        "customer" : customers
     }
 
 

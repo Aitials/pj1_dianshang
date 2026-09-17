@@ -9,3 +9,7 @@ def get_orders(db : Session,page, page_size):
     result = db.execute(stmt)
     return result.scalars().all()
 
+def get_order_details(db : Session, order_id :str):
+    order = select(Order).where(Order.order_id == order_id)
+    result = db.execute(order)
+    return result.scalar_one_or_none()

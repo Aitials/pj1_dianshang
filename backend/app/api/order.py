@@ -1,7 +1,12 @@
-from fastapi import APIRouter ,Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.db.session import get_db
-from app.repositories.order import get_orders
+from app.repositories.order import get_orders ,get_order_details
+from app.repositories.order_items import get_orderitemd_byid
+from app.repositories.order_payments import get_payments_byid
+from app.repositories.order_reviews import get_reviews_byid
+from app.repositories.customer import get_customer_by_id
 from app.repositories.dashboard import count_orders
+from app.schemas.order import OrderDetailResponse
 from sqlalchemy.orm import Session
 router = APIRouter()
 @router.get("/orders")
@@ -26,3 +31,20 @@ def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20):
             for o in orders
         ]
     }
+@router.get("/{order_id}", response_model=OrderDetailResponse)
+def get_order_detail(order_id:str,db: Session = Depends(get_db),):
+    order_detail = get_order_details(db,order_id)
+    if order_detail is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    orderitems = get_orderitemd_byid(db,order_id)
+    payment = get_payments_byid(db,order_id)
+    reviews = get_reviews_byid(db,order_id)
+    customer = get_customer_by_id(db,order_detail.customer_id)
+    return {
+        "order" : order_detail,
+        "customer" : customer,
+        "items" : orderitems,
+        "payments": payment,
+        "reviews" : reviews
+    }
+
