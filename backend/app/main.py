@@ -6,7 +6,10 @@ from app.api.seller import router as seller_router
 from app.db.session import Base, engine
 from app.api.customer import router as customer_router
 from app.api.order import router as order_router
-
+from app.models.role import Role
+from app.models.permission import Permission
+from app.models.user_role import UserRole
+from app.models.role_permission import RolePermission
 from app.api.order_reviews import router as reviews_router
 from app.api.order_items import router as items_router
 from app.api.order_payments import router as payments_router
@@ -15,6 +18,7 @@ from app.api.geolocation import router as geolocation_router
 from app.api.dashboard import router as dashboard_router
 from app.api.inventory import router as inventory_router
 from app.api.logistics import router as logistics_router
+from app.api.user import router as user_router
 app = FastAPI()
 
 
@@ -36,5 +40,6 @@ app.include_router(geolocation_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api/dashboard")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(logistics_router, prefix="/api")
+app.include_router(user_router, prefix="/api")
 
 Base.metadata.create_all(bind=engine)

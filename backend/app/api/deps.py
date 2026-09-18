@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-
+from app.repositories.permission import get_user_permissions
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.repositories.user import get_user
@@ -25,3 +25,21 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="用户不存在")
 
     return user
+
+def require_permission(permission_name: str):
+
+    def permission_checker(
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ):
+        permissions = get_user_permissions(db, current_user.id)
+
+        if permission_name not in permissions:
+            raise HTTPException(
+                status_code=403,
+                detail="没有权限执行此操作"
+            )
+
+        return current_user
+
+    return permission_checker

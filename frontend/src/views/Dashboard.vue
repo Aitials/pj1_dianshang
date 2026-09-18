@@ -31,18 +31,23 @@
     <!-- 排行 -->
     <el-row :gutter="16">
       <el-col :span="12">
-        <el-card>
+        <el-card class="chart-card">
           <div class="chart-title">类目销售额 Top 10</div>
           <div ref="categoryChartRef" style="height: 420px"></div>
         </el-card>
       </el-col>
       <el-col :span="12">
-        <el-card>
+        <el-card class="chart-card">
           <div class="chart-title">卖家销售额 Top 10</div>
           <div ref="sellerChartRef" style="height: 420px"></div>
         </el-card>
       </el-col>
     </el-row>
+
+    <el-card class="chart-card">
+      <div class="chart-title">商品销售额 Top 10</div>
+      <div ref="productChartRef" style="height: 420px"></div>
+    </el-card>
   </div>
 </template>
 
@@ -55,26 +60,36 @@ import {
   getSalesTrend,
   getCategoryRanking,
   getSellerRanking,
+  getProductsRanking,
 } from '../api/dashboard'
 
 const overview = ref({})
 const onTimeRate = ref(0)
 
+const deliveredRate = computed(() => {
+  const total = overview.value.total_orders
+  const delivered = overview.value.delivered_orders
+  if (!total || delivered === undefined) return '-'
+  return ((delivered / total) * 100).toFixed(1) + '%'
+})
+
 const cards = computed(() => [
   { label: '销售额 (R$)', value: formatMoney(overview.value.total_sales), icon: 'Money', bg: '#eff6ff', color: '#2563eb' },
   { label: '订单量', value: formatNumber(overview.value.total_orders), icon: 'List', bg: '#ecfdf5', color: '#10b981' },
-  { label: '客单价 (R$)', value: formatMoney(overview.value.avg_order_value), icon: 'Coin', bg: '#fff7ed', color: '#f59e0b' },
-  { label: '客户数', value: formatNumber(overview.value.total_customers), icon: 'User', bg: '#f5f3ff', color: '#8b5cf6' },
-  { label: '平均评分', value: overview.value.avg_review_score ?? '-', icon: 'Star', bg: '#fffbeb', color: '#f59e0b' },
+  { label: '已送达', value: formatNumber(overview.value.delivered_orders), icon: 'CircleCheck', bg: '#f0f9ff', color: '#0ea5e9' },
+  { label: '已取消', value: formatNumber(overview.value.canceled_orders), icon: 'CircleClose', bg: '#fef2f2', color: '#ef4444' },
   { label: '准时率', value: onTimeRate.value ? onTimeRate.value + '%' : '-', icon: 'Clock', bg: '#ecfeff', color: '#06b6d4' },
+  { label: '已送达率', value: deliveredRate.value, icon: 'DataLine', bg: '#f5f3ff', color: '#8b5cf6' },
 ])
 
 const trendChartRef = ref(null)
 const categoryChartRef = ref(null)
 const sellerChartRef = ref(null)
+const productChartRef = ref(null)
 let trendChart = null
 let categoryChart = null
 let sellerChart = null
+let productChart = null
 
 function formatNumber(n) {
   if (n === undefined || n === null) return '-'
@@ -88,7 +103,7 @@ function formatMoney(n) {
 async function loadOverview() {
   const [ov, rate] = await Promise.all([getOverview(), getOnTimeRate()])
   overview.value = ov
-  onTimeRate.value = rate.sand_in_time_rate ?? 0
+  onTimeRate.value = rate.send_time_rate ?? 0
 }
 
 async function loadTrend() {
@@ -121,8 +136,17 @@ function buildBarOption(names, values, color) {
   }
 }
 
+// 商品 ID 太长，展示时截断，tooltip 显示完整
+function shortId(id) {
+  return id && id.length > 12 ? id.slice(0, 12) + '…' : id
+}
+
 async function loadRankings() {
-  const [cat, seller] = await Promise.all([getCategoryRanking(10), getSellerRanking(10)])
+  const [cat, seller, product] = await Promise.all([
+    getCategoryRanking(10),
+    getSellerRanking(10),
+    getProductsRanking(10),
+  ])
   categoryChart.setOption(
     buildBarOption(
       cat.category_ranking.map((i) => i.category_name),
@@ -132,9 +156,16 @@ async function loadRankings() {
   )
   sellerChart.setOption(
     buildBarOption(
-      seller['seller-ranking'].map((i) => i.seller_id),
-      seller['seller-ranking'].map((i) => i.sales),
+      seller.seller_ranking.map((i) => i.seller_id),
+      seller.seller_ranking.map((i) => i.sales),
       '#10b981'
+    )
+  )
+  productChart.setOption(
+    buildBarOption(
+      product.product_ranking.map((i) => shortId(i.product_id)),
+      product.product_ranking.map((i) => i.sales),
+      '#f59e0b'
     )
   )
 }
@@ -143,6 +174,7 @@ onMounted(async () => {
   trendChart = echarts.init(trendChartRef.value)
   categoryChart = echarts.init(categoryChartRef.value)
   sellerChart = echarts.init(sellerChartRef.value)
+  productChart = echarts.init(productChartRef.value)
   await Promise.all([loadOverview(), loadTrend(), loadRankings()])
 })
 
@@ -150,6 +182,7 @@ onBeforeUnmount(() => {
   trendChart?.dispose()
   categoryChart?.dispose()
   sellerChart?.dispose()
+  productChart?.dispose()
 })
 </script>
 

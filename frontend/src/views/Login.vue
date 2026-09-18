@@ -83,6 +83,7 @@ async function handleLogin() {
   try {
     const res = await login({ username: form.username, password: form.password })
     authStore.setAuth(res.access_token, res.username)
+    await authStore.loadPermissions()
     ElMessage.success('登录成功')
     router.push('/dashboard')
   } finally {

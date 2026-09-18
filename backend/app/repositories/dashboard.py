@@ -97,7 +97,7 @@ def get_overview(db):
     delivered_orders = select(func.count(Order.order_id)).where(
     Order.order_status == "delivered")
     canceled_orders = select(func.count(Order.order_id)).where(Order.order_status == "canceled")
-    total_sales = select(func.sum(OrderPayment.payment_value))
+    total_sales = select(func.sum(OrderPayment.payment_value)).where(Order.order_status == "canceled")
 
     tresult = db.execute(total_orders).scalars().one()
     dresult = db.execute(delivered_orders).scalars().one()

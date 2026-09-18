@@ -4,11 +4,11 @@ from app.schemas.seller import SellerResponse
 from app.db.session import get_db
 from app.repositories.seller import get_sellers ,count_sellers
 from app.repositories.seller import get_seller_byid
-
+from app.api.deps import require_permission
 router = APIRouter()
 
 
-@router.get("/sellers")
+@router.get("/sellers" ,dependencies=[Depends(require_permission("seller:read"))])
 def list_sellers(page:int ,page_size :int,seller_city:str | None = None,seller_state :str | None = None ,db: Session = Depends(get_db)):
     sellers = get_sellers(page ,page_size,seller_city,seller_state,db)
     count = count_sellers(seller_city,seller_state,db)
@@ -25,7 +25,7 @@ def list_sellers(page:int ,page_size :int,seller_city:str | None = None,seller_s
         ]
     }
 
-@router.get("/sellers/{seller_id}" , response_model=SellerResponse)
+@router.get("/sellers/{seller_id}" , response_model=SellerResponse ,dependencies=[Depends(require_permission("seller:read"))])
 def list_seller(seller_id: str, db: Session = Depends(get_db)):
     sellers = get_seller_byid(db, seller_id)
     if sellers is None:

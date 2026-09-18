@@ -1,11 +1,11 @@
 import request from '../utils/request'
 
-// 总览指标（5 个，缺准时率）
+// 总览指标
 export function getOverview() {
   return request.get('/dashboard/overview')
 }
 
-// 准时率（单独接口）
+// 准时率
 export function getOnTimeRate() {
   return request.get('/dashboard/send_time')
 }
@@ -22,5 +22,10 @@ export function getCategoryRanking(top = 10) {
 
 // 卖家排行
 export function getSellerRanking(top = 10) {
-  return request.get('/dashboard/seller-ranking', { params: { top } })
+  return request.get('/dashboard/seller_ranking', { params: { top } })
+}
+
+// 商品排行
+export function getProductsRanking(top = 10) {
+  return request.get('/dashboard/products_ranking', { params: { top } })
 }

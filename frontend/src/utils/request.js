@@ -22,12 +22,16 @@ request.interceptors.response.use(
   (error) => {
     const status = error.response?.status
     const detail = error.response?.data?.detail
+    // silent 标记的请求（如权限探测）不弹全局错误提示
+    const silent = error.config?.silent
 
     if (status === 401) {
       ElMessage.error(detail || '登录已过期，请重新登录')
       localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      localStorage.removeItem('role')
       window.location.href = '/login'
-    } else {
+    } else if (!silent) {
       ElMessage.error(detail || error.message || '请求失败')
     }
     return Promise.reject(error)

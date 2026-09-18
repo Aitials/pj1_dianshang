@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from app.schemas.product import ProductResponse
 from app.db.session import get_db
 from app.repositories.products import get_products,get_products_byid,count_products
-
+from app.api.deps import require_permission
 router = APIRouter()
 
 
-@router.get("/products")
+@router.get("/products" ,dependencies=[Depends(require_permission("product:read"))])
 def list_products(page: int , page_size: int ,product_category_name :str | None = None,db: Session = Depends(get_db)):
     products = get_products(page,page_size,product_category_name,db)
     count = count_products(product_category_name,db)
@@ -30,7 +30,7 @@ def list_products(page: int , page_size: int ,product_category_name :str | None 
     }
 
 
-@router.get("/products/{products_id}" ,response_model=ProductResponse)
+@router.get("/products/{products_id}" ,response_model=ProductResponse ,dependencies=[Depends(require_permission("product:read"))])
 def list_product_byid(products_id : str ,db: Session = Depends(get_db)):
     products = get_products_byid(products_id ,db)
     if products is None:

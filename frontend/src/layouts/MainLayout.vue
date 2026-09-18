@@ -13,33 +13,9 @@
         text-color="#94a3b8"
         active-text-color="#ffffff"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><Odometer /></el-icon>
-          <span>经营总览</span>
-        </el-menu-item>
-        <el-menu-item index="/orders">
-          <el-icon><List /></el-icon>
-          <span>订单管理</span>
-        </el-menu-item>
-        <el-menu-item index="/products">
-          <el-icon><Goods /></el-icon>
-          <span>商品与类目</span>
-        </el-menu-item>
-        <el-menu-item index="/customers">
-          <el-icon><User /></el-icon>
-          <span>客户分析</span>
-        </el-menu-item>
-        <el-menu-item index="/sellers">
-          <el-icon><Shop /></el-icon>
-          <span>卖家分析</span>
-        </el-menu-item>
-        <el-menu-item index="/logistics">
-          <el-icon><Van /></el-icon>
-          <span>物流分析</span>
-        </el-menu-item>
-        <el-menu-item index="/inventory">
-          <el-icon><Box /></el-icon>
-          <span>库存管理</span>
+        <el-menu-item v-for="m in visibleMenus" :key="m.path" :index="m.path">
+          <el-icon><component :is="m.icon" /></el-icon>
+          <span>{{ m.title }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -73,11 +49,29 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, ROLE_MENUS } from '../stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 全量菜单配置
+const menus = [
+  { path: '/dashboard', title: '经营总览', icon: 'Odometer' },
+  { path: '/orders', title: '订单管理', icon: 'List' },
+  { path: '/products', title: '商品与类目', icon: 'Goods' },
+  { path: '/customers', title: '客户分析', icon: 'User' },
+  { path: '/sellers', title: '卖家分析', icon: 'Shop' },
+  { path: '/logistics', title: '物流分析', icon: 'Van' },
+  { path: '/inventory', title: '库存管理', icon: 'Box' },
+  { path: '/users', title: '系统用户管理', icon: 'Setting' },
+]
+
+// 根据当前角色过滤可见菜单
+const visibleMenus = computed(() => {
+  const allowed = ROLE_MENUS[authStore.role] || []
+  return menus.filter((m) => allowed.includes(m.path))
+})
 
 const avatarText = computed(() => (authStore.username || 'U').slice(0, 1).toUpperCase())
 

@@ -1,5 +1,11 @@
 import request from '../utils/request'
 
-export function getProducts() {
-  return request.get('/products')
+// 商品列表（分页 + 类目筛选）
+export function getProducts(params) {
+  return request.get('/products', { params })
+}
+
+// 商品详情
+export function getProductDetail(productId) {
+  return request.get(`/products/${productId}`)
 }

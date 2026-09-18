@@ -9,8 +9,9 @@ from app.repositories.customer import get_customer_by_id
 from app.repositories.dashboard import count_orders
 from app.schemas.order import OrderDetailResponse
 from sqlalchemy.orm import Session
+from app.api.deps import require_permission
 router = APIRouter()
-@router.get("/orders")
+@router.get("/orders" ,dependencies=[Depends(require_permission("order:read"))])
 def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 , order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
     orders= get_orders(db,page,page_size ,order_status , start_time, end_time)
     counts = count_orders(db ,order_status , start_time, end_time)
@@ -32,7 +33,7 @@ def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 ,
             for o in orders
         ]
     }
-@router.get("/orders/{order_id}", response_model=OrderDetailResponse)
+@router.get("/orders/{order_id}", response_model=OrderDetailResponse ,dependencies=[Depends(require_permission("order:read"))])
 def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     order_detail = get_order_details(db,order_id)
     if order_detail is None:
