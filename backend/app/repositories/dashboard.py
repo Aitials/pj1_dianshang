@@ -55,32 +55,12 @@ def sales_trend(db : Session ):
         for row in result.all()
     ]
 
-def get_category_ranking(db, top):
-    stmt =\
-    ( select
-        (Product.product_category_name,
-         func.sum(OrderItem.price)
-         )
-    .select_from(Order)
-    .join(OrderItem ,OrderItem.order_id == Order.order_id )
-    .join(Product, Product.product_id == OrderItem.product_id)
-    .where(Order.order_status != "canceled")
-    .group_by(Product.product_category_name)
-    .order_by(func.sum(OrderItem.price).desc())
-    .limit(top)
-    )
-    result = db.execute(stmt).all()
-    return [
-        {
-        "category_name" : c[0] ,
-        "sales" : c[1] }
-        for c in result
-    ]
+
 
 def get_seller_ranking(db,top):
     stmt = ( select
         (OrderItem.seller_id ,
-         func.sum(OrderItem.price))
+         func.sum(OrderItem.price).label("sales"))
         .select_from(Order)
         .join(OrderItem, OrderItem.order_id == Order.order_id)
         .where(Order.order_status != "canceled")
@@ -91,10 +71,10 @@ def get_seller_ranking(db,top):
     result  = db.execute(stmt).all()
     return [
         {
-            "seller_id" : row[0] ,
-            "sales" : row[1]
+            "seller_id" : r.seller_id ,
+            "sales" : r.sales ,
         }
-        for row in result
+        for r in result
     ]
 
 def get_sned_time(db):
@@ -129,3 +109,46 @@ def get_overview(db):
         "canceled_orders": cresult,
         "total_sales": tsresult,
     }
+
+def get_productsranking(db : Session , top):
+    stmt = (select(
+        Product.product_id,
+        func.sum(OrderItem.price).label("sales"),
+        func.count(OrderItem.order_item_id).label("total_sales"))
+    .select_from(Product)
+    .join(OrderItem ,OrderItem.product_id == Product.product_id )
+    .join(Order ,Order.order_id == OrderItem.order_id )
+    .where(Order.order_status != "canceled")
+    .group_by(Product.product_id)
+    .order_by(func.sum(OrderItem.price).desc())
+    .limit(top))
+    ranking = db.execute(stmt).all()
+    return  [
+           {
+               "product_id" : r.product_id ,
+               "sales" : round(r.sales,2),
+               "sold_count"  : r.total_sales ,
+           }
+           for r in ranking
+       ]
+
+
+def get_category_ranking(db : Session , top):
+    stmt = (select(Product.product_category_name,
+                   func.sum(OrderItem.price).label("sales"),)
+    .select_from(Product)
+    .join(OrderItem, OrderItem.product_id == Product.product_id )
+    .join(Order ,Order.order_id == OrderItem.order_id )
+    .where(Order.order_status != "canceled")
+    .group_by(Product.product_category_name)
+    .order_by(func.sum(OrderItem.price).desc())
+    .limit(top)
+    )
+    rank = db.execute(stmt).all()
+    return [
+        {
+            "category_name" : r.product_category_name ,
+            "sales" : round(r.sales,2),
+        }
+        for r in rank
+    ]
