@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends ,HTTPException
 from app.api.deps import require_permission
 from sqlalchemy.orm import Session
 from app.schemas.order import CustomerResponse
-from app.repositories.customer import get_customers , get_customer_by_id,count_customers
-
+from app.repositories.customer import get_customers , get_customer_by_id,count_customers ,get_customer_rank ,get_customer_repurchase
+from app.core.response import ok
 from app.db.session import get_db
 router = APIRouter()
 
@@ -24,6 +24,23 @@ def list_customers(page :int,page_size:int ,customer_city:str | None = None,cust
             for c in customers
         ]
     }
+
+@router.get('/customers/ranking' ,dependencies=[Depends(require_permission("customer:read"))])
+def list_cutomerrank(top:int =10, db: Session = Depends(get_db)):
+    rank = get_customer_rank(top,db)
+    return ok(rank)
+
+@router.get('/customers/repurchase' ,dependencies=[Depends(require_permission("customer:read"))])
+def list_customerrepurchase(db : Session= Depends(get_db)):
+    result = get_customer_repurchase(db)
+    return ok(result)
+
+'''
+@router.get('/customers/geo' ,dependencies=[Depends(require_permission("customer:read"))])
+def list_customersgeo():
+
+'''
+
 
 @router.get('/customers/{customer_id}' ,response_model=CustomerResponse ,dependencies=[Depends(require_permission("customer:read"))])
 def list_customerbyid( customer_id: str ,db: Session = Depends(get_db)):

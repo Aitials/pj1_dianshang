@@ -1,5 +1,7 @@
-from fastapi import FastAPI
-
+from fastapi import FastAPI ,Request ,HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from app.core.response import fail,ok
 from app.api.auth import router as auth_router
 from app.api.products import router as product_router
 from app.api.seller import router as seller_router
@@ -24,7 +26,7 @@ app = FastAPI()
 
 @app.get("/healthy")
 def health_check():
-    return {"message": "OK"}
+    return ok(message="ok")
 
 
 app.include_router(auth_router, prefix="/api/auth")
@@ -41,5 +43,14 @@ app.include_router(dashboard_router, prefix="/api/dashboard")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(logistics_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
+
+@app.exception_handler(HTTPException)
+async def http_exc_handler(request: Request, exc: HTTPException):
+    return JSONResponse(status_code=exc.status_code,
+                        content=fail(exc.status_code, exc.detail))
+
+@app.exception_handler(RequestValidationError)
+async def validation_exc_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(status_code=422, content=fail(422, "参数校验失败"))
 
 Base.metadata.create_all(bind=engine)
