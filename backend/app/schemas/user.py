@@ -7,3 +7,7 @@ class CreateUser(BaseModel):
 
 class UpdateUser(BaseModel):
     password: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str

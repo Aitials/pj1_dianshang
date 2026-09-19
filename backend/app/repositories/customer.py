@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models.customer import Customer
 from app.models.order import Order
 from app.models.order_items import OrderItem
+from app.models.geolocation import Geolocation
 
 
 def get_customers(page ,page_size,customer_city,customer_state,db : Session):
@@ -44,7 +45,7 @@ def get_customer_rank(top ,db: Session):
         "top":top,
         "customer_rank":[
             {
-                "customer_id":r.customer_unique_id,
+                "customer_unique_id":r.customer_unique_id,
                 "sales" : round(float(r.sales),2),
                 "count_order" : r.count_order
             }
@@ -82,4 +83,30 @@ def get_customer_repurchase(db: Session) -> dict:
         "total_customers": total_customers,
         "repeat_customers": repeat_customers,
         "repurchase_rate": rate,
+    }
+
+
+def get_customer_geo(db: Session):
+    stmt = (select(Customer.customer_city ,Customer.customer_state,
+                   func.avg(Geolocation.geolocation_lat).label('lat'),
+                   func.avg(Geolocation.geolocation_lng).label('lng'),
+                   func.count(distinct(Customer.customer_unique_id)).label('count_customers'))
+    .select_from(Customer)
+    .join(Order, Order.customer_id == Customer.customer_id)
+    .join(Geolocation , Geolocation.geolocation_zip_code_prefix == Customer.customer_zip_code_prefix)
+    .where(Order.order_status != 'canceled')
+    .group_by(Customer.customer_city , Customer.customer_state)
+    )
+    result = db.execute(stmt).all()
+    return {
+        "items": [
+            {
+                "city" : r.customer_city,
+                "state" : r.customer_state,
+                "customer_count" : r.count_customers,
+                "lat" : r.lat,
+                "lng" : r.lng,
+            }
+            for r in result
+        ]
     }

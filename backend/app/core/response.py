@@ -1,7 +1,9 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional ,TypeVar ,Generic
 from pydantic import BaseModel
 
-class ApiResponse(BaseModel):
+T = TypeVar("T")
+
+class ApiResponse(BaseModel ,Generic[T]):
     code: int = 0
     message: str = "success"
     data: Optional[Any] = None
