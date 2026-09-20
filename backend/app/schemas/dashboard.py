@@ -7,6 +7,9 @@ class DashboardOverviewResponse(BaseModel):
     delivered_orders :int
     canceled_orders :int
     total_sales :Decimal
+    average_order_value : Decimal
+    customer_count : int
+    avg_review_score : float
     class Config:
         from_attributes = True
 
@@ -35,3 +38,8 @@ class Seller_rankresponse(BaseModel):
 
 class Send_time_rateresponse(BaseModel):
     send_time_rate: float
+
+class AlertResponse(BaseModel):
+    low_stock_count : int
+    delayed_order_count :int
+    low_review_count : float

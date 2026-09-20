@@ -65,6 +65,7 @@ const menus = [
   { path: '/logistics', title: '物流分析', icon: 'Van' },
   { path: '/inventory', title: '库存管理', icon: 'Box' },
   { path: '/users', title: '系统用户管理', icon: 'Setting' },
+  { path: '/logs', title: '操作日志', icon: 'Document' },
 ]
 
 // 根据当前角色过滤可见菜单

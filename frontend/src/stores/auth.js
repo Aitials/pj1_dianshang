@@ -5,7 +5,7 @@ import { getOrders } from '../api/orders'
 
 // 角色 → 可访问菜单路径映射（与后端 RBAC 权限对齐）
 export const ROLE_MENUS = {
-  admin: ['/dashboard', '/orders', '/products', '/customers', '/sellers', '/logistics', '/inventory', '/users'],
+  admin: ['/dashboard', '/orders', '/products', '/customers', '/sellers', '/logistics', '/inventory', '/users', '/logs'],
   operator: ['/dashboard', '/orders', '/products', '/customers', '/sellers', '/logistics'],
   warehouse: ['/products', '/inventory'],
 }

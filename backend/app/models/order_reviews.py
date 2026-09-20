@@ -5,7 +5,6 @@ from app.db.session import Base
 
 class OrderReview(Base):
     __tablename__ = "olist_order_reviews_dataset_clean"
-
     review_id = Column(String(35), primary_key=True)
     order_id = Column(String(35), nullable=False)
     review_score = Column(Integer, nullable=False)

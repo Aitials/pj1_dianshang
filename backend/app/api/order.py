@@ -1,39 +1,39 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.db.session import get_db
 from datetime import datetime
+from app.core.response import ApiResponse, ok ,ok_page
 from app.repositories.order import get_orders ,get_order_details
 from app.repositories.order_items import get_orderitemd_byid
 from app.repositories.order_payments import get_payments_byid
 from app.repositories.order_reviews import get_reviews_byid
 from app.repositories.customer import get_customer_by_id
 from app.repositories.dashboard import count_orders
-from app.schemas.order import OrderDetailResponse
+from app.schemas.order import OrderDetailResponse, OrderResponse
 from sqlalchemy.orm import Session
 from app.api.deps import require_permission
+from app.schemas.response import PageData
+
 router = APIRouter()
-@router.get("/orders" ,dependencies=[Depends(require_permission("order:read"))])
+@router.get("/orders" ,response_model=ApiResponse[PageData[OrderResponse]],dependencies=[Depends(require_permission("order:read"))])
 def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 , order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
     orders= get_orders(db,page,page_size ,order_status , start_time, end_time)
     counts = count_orders(db ,order_status , start_time, end_time)
-    return {
-        "total": counts,
-        "page" : page,
-        "page_size" : page_size,
-        "items":[
-            {
-            "order_id" : o.order_id,
-            "customer_id" : o.customer_id,
-            "order_status" : o.order_status,
-            "order_purchase_timestamp" : o.order_purchase_timestamp,
-            "order_approved_at" : o.order_approved_at,
-            "order_delivered_carrier_date" : o.order_delivered_carrier_date,
-            "order_delivered_customer_date" : o.order_delivered_customer_date,
-            "order_estimated_delivery_date" : o.order_estimated_delivery_date,
-            }
-            for o in orders
-        ]
-    }
-@router.get("/orders/{order_id}", response_model=OrderDetailResponse ,dependencies=[Depends(require_permission("order:read"))])
+    items = [
+        {
+            "order_id": o.order_id,
+            "customer_id": o.customer_id,
+            "order_status": o.order_status,
+            "order_purchase_timestamp": o.order_purchase_timestamp,
+            "order_approved_at":o.order_approved_at,
+            "order_delivered_carrier_date": o.order_delivered_carrier_date,
+            "order_delivered_customer_date": o.order_delivered_customer_date,
+            "order_estimated_delivery_date": o.order_estimated_delivery_date,
+        }
+        for o in orders
+    ]
+    return ok_page(items,counts ,page,page_size)
+
+@router.get("/orders/{order_id}", response_model=ApiResponse[OrderDetailResponse] ,dependencies=[Depends(require_permission("order:read"))])
 def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     order_detail = get_order_details(db,order_id)
     if order_detail is None:
@@ -42,11 +42,11 @@ def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     payment = get_payments_byid(db,order_id)
     reviews = get_reviews_byid(db,order_id)
     customer = get_customer_by_id(db,order_detail.customer_id)
-    return {
+    return ok({
         "order" : order_detail,
         "customer" : customer,
         "items" : orderitems,
         "payments": payment,
         "reviews" : reviews
-    }
+    })
 

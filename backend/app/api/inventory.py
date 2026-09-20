@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from app.api.deps import require_permission
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.core.response import ok
+from app.core.response import ok ,ok_page
 from app.schemas.response import ApiResponse
-from app.schemas.inventory import InventoryListResponse ,InventoryitemResponse ,InventoryWarningResponse
-from app.repositories.inventory import get_inventory,adjust_inventory,get_warnings
+from app.schemas.inventory import InventoryListResponse ,InventoryitemResponse ,InventoryWarningResponse ,ReplenishResponse ,inventory_logsResponse
+from app.repositories.inventory import get_inventory,adjust_inventory,get_warnings ,get_replenish ,get_inventory_logs
 from app.schemas.AdjustInventory import AdjustInventory
 
 router = APIRouter()
@@ -25,3 +25,13 @@ def list_warnigns(db : Session = Depends(get_db)):
         "need_fill": get_warnings(db)
     }
     return ok(result)
+
+@router.get('/inventory/replenish' ,response_model=ApiResponse[ReplenishResponse] ,dependencies=[Depends(require_permission("inventory:read"))] )
+def list_replenish(replenish_days:int = 30 ,db : Session = Depends(get_db)):
+    replenish =get_replenish( replenish_days, db)
+    return ok(replenish)
+
+@router.get('/inventory/logs' , response_model=ApiResponse[inventory_logsResponse] ,dependencies=[Depends(require_permission("inventory:read"))])
+def list_logs(product_id :str, page : int = 1, page_size :int  =10 ,db : Session = Depends(get_db)):
+    logs = get_inventory_logs(product_id , page , page_size, db)
+    return ok_page( logs['items'],logs['total']  ,page ,page_size)

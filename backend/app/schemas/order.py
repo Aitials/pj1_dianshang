@@ -66,4 +66,4 @@ class OrderDetailResponse(BaseModel):
     customer: CustomerResponse
     items: list[OrderItemResponse]
     payments: list[PaymentResponse]
-    reviews: ReviewResponse | None = None
+    reviews: list[ReviewResponse] = []

@@ -9,3 +9,18 @@ export function getInventory(params, config) {
 export function adjustInventory(productId, data) {
   return request.post(`/adjust/${productId}/`, data)
 }
+
+// 低库存预警
+export function getWarnings() {
+  return request.get('/inventory/warnings')
+}
+
+// 补货建议
+export function getReplenish(replenishDays = 30) {
+  return request.get('/inventory/replenish', { params: { replenish_days: replenishDays } })
+}
+
+// 库存流水
+export function getInventoryLogs(params) {
+  return request.get('/inventory/logs', { params })
+}

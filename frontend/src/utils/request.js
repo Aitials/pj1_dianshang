@@ -16,9 +16,17 @@ request.interceptors.request.use((config) => {
   return config
 })
 
-// 响应拦截器：统一错误处理
+// 响应拦截器：统一解包 + 错误处理
 request.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    const data = response.data
+    // 统一响应格式 {code, message, data} → 解包出 data
+    if (data && typeof data === 'object' && 'code' in data && 'message' in data && 'data' in data) {
+      return data.data
+    }
+    // 旧格式（如登录、部分 dashboard 接口）原样返回
+    return data
+  },
   (error) => {
     const status = error.response?.status
     const detail = error.response?.data?.detail

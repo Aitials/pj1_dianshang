@@ -5,7 +5,7 @@
       <span>经营总览</span>
     </div>
 
-    <!-- 指标卡 -->
+    <!-- 核心指标卡 -->
     <el-row :gutter="16">
       <el-col v-for="card in cards" :key="card.label" :span="4">
         <el-card class="metric-card">
@@ -21,6 +21,40 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 预警区 -->
+    <el-card class="alert-card">
+      <div class="chart-title">经营预警</div>
+      <div class="alert-list">
+        <div class="alert-item">
+          <div class="alert-icon" style="background: #fef2f2">
+            <el-icon :size="22" color="#ef4444"><WarningFilled /></el-icon>
+          </div>
+          <div>
+            <div class="alert-label">低库存商品</div>
+            <div class="alert-value">{{ alerts.low_stock_count ?? '-' }} 个</div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background: #fff7ed">
+            <el-icon :size="22" color="#f59e0b"><Clock /></el-icon>
+          </div>
+          <div>
+            <div class="alert-label">延迟订单</div>
+            <div class="alert-value">{{ alerts.delayed_order_count ?? '-' }} 单</div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background: #f5f3ff">
+            <el-icon :size="22" color="#8b5cf6"><Star /></el-icon>
+          </div>
+          <div>
+            <div class="alert-label">低评分卖家（&lt;3 分）</div>
+            <div class="alert-value">{{ alerts.low_review_count ?? '-' }} 个</div>
+          </div>
+        </div>
+      </div>
+    </el-card>
 
     <!-- 销售趋势 -->
     <el-card class="chart-card">
@@ -56,6 +90,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import {
   getOverview,
+  getAlerts,
   getOnTimeRate,
   getSalesTrend,
   getCategoryRanking,
@@ -64,22 +99,16 @@ import {
 } from '../api/dashboard'
 
 const overview = ref({})
+const alerts = ref({})
 const onTimeRate = ref(0)
-
-const deliveredRate = computed(() => {
-  const total = overview.value.total_orders
-  const delivered = overview.value.delivered_orders
-  if (!total || delivered === undefined) return '-'
-  return ((delivered / total) * 100).toFixed(1) + '%'
-})
 
 const cards = computed(() => [
   { label: '销售额 (R$)', value: formatMoney(overview.value.total_sales), icon: 'Money', bg: '#eff6ff', color: '#2563eb' },
   { label: '订单量', value: formatNumber(overview.value.total_orders), icon: 'List', bg: '#ecfdf5', color: '#10b981' },
-  { label: '已送达', value: formatNumber(overview.value.delivered_orders), icon: 'CircleCheck', bg: '#f0f9ff', color: '#0ea5e9' },
-  { label: '已取消', value: formatNumber(overview.value.canceled_orders), icon: 'CircleClose', bg: '#fef2f2', color: '#ef4444' },
+  { label: '客单价 (R$)', value: formatMoney(overview.value.average_order_value), icon: 'Coin', bg: '#fff7ed', color: '#f59e0b' },
+  { label: '客户数', value: formatNumber(overview.value.customer_count), icon: 'User', bg: '#f5f3ff', color: '#8b5cf6' },
+  { label: '平均评分', value: overview.value.avg_review_score ?? '-', icon: 'Star', bg: '#fffbeb', color: '#f59e0b' },
   { label: '准时率', value: onTimeRate.value ? onTimeRate.value + '%' : '-', icon: 'Clock', bg: '#ecfeff', color: '#06b6d4' },
-  { label: '已送达率', value: deliveredRate.value, icon: 'DataLine', bg: '#f5f3ff', color: '#8b5cf6' },
 ])
 
 const trendChartRef = ref(null)
@@ -101,8 +130,9 @@ function formatMoney(n) {
 }
 
 async function loadOverview() {
-  const [ov, rate] = await Promise.all([getOverview(), getOnTimeRate()])
+  const [ov, al, rate] = await Promise.all([getOverview(), getAlerts(), getOnTimeRate()])
   overview.value = ov
+  alerts.value = al
   onTimeRate.value = rate.send_time_rate ?? 0
 }
 
@@ -136,7 +166,6 @@ function buildBarOption(names, values, color) {
   }
 }
 
-// 商品 ID 太长，展示时截断，tooltip 显示完整
 function shortId(id) {
   return id && id.length > 12 ? id.slice(0, 12) + '…' : id
 }
@@ -213,6 +242,37 @@ onBeforeUnmount(() => {
   color: #0f172a;
   font-size: 22px;
   font-weight: 700;
+}
+.alert-card {
+  margin-bottom: 16px;
+}
+.alert-list {
+  display: flex;
+  gap: 24px;
+}
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.alert-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.alert-label {
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.alert-value {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 600;
 }
 .chart-card {
   margin-bottom: 16px;

@@ -62,7 +62,7 @@ async function load() {
       seller_city: filters.seller_city || undefined,
       seller_state: filters.seller_state || undefined,
     })
-    sellers.value = res.sellers
+    sellers.value = res.items
     total.value = res.total
   } finally {
     loading.value = false

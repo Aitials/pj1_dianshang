@@ -36,14 +36,14 @@ def list_customer_repurchase(db : Session= Depends(get_db)):
     result = get_customer_repurchase(db)
     return ok(result)
 
-@router.get('/customers/geo' ,dependencies=[Depends(require_permission("customer:read"))])
+@router.get('/customers/geo' ,response_model=ApiResponse[CustomerGeoResponse],dependencies=[Depends(require_permission("customer:read"))])
 def list_customer_geo(db: Session = Depends(get_db)):
     geo = get_customer_geo(db)
     return ok(geo)
 
 
 
-@router.get('/customers/{customer_id}' ,response_model=ApiResponse[CustomerGeoResponse],dependencies=[Depends(require_permission("customer:read"))])
+@router.get('/customers/{customer_id}' ,response_model=ApiResponse[CustomerResponse],dependencies=[Depends(require_permission("customer:read"))])
 def list_customer_byid( customer_id: str ,db: Session = Depends(get_db)):
     customers = get_customer_by_id(db,customer_id)
     if customers is None:

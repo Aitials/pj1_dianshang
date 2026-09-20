@@ -12,6 +12,7 @@ from app.models.role import Role
 from app.models.permission import Permission
 from app.models.user_role import UserRole
 from app.models.role_permission import RolePermission
+from app.models.operation_log import OperationLog
 from app.api.order_reviews import router as reviews_router
 from app.api.order_items import router as items_router
 from app.api.order_payments import router as payments_router
@@ -21,6 +22,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.inventory import router as inventory_router
 from app.api.logistics import router as logistics_router
 from app.api.user import router as user_router
+from app.api.log import router as log_router
 app = FastAPI()
 
 
@@ -43,6 +45,7 @@ app.include_router(dashboard_router, prefix="/api/dashboard")
 app.include_router(inventory_router, prefix="/api")
 app.include_router(logistics_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
+app.include_router(log_router, prefix="/api")
 
 @app.exception_handler(HTTPException)
 async def http_exc_handler(request: Request, exc: HTTPException):

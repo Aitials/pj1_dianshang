@@ -1,10 +1,9 @@
-from decimal import Decimal
 from pydantic import BaseModel
 
 
 class CustomerRankItem(BaseModel):
     customer_unique_id: str
-    sales: Decimal
+    sales: float
     count_order: int
 
 

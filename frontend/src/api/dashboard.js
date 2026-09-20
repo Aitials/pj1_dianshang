@@ -5,6 +5,11 @@ export function getOverview() {
   return request.get('/dashboard/overview')
 }
 
+// 预警
+export function getAlerts() {
+  return request.get('/dashboard/alerts')
+}
+
 // 准时率
 export function getOnTimeRate() {
   return request.get('/dashboard/send_time')

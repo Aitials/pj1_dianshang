@@ -1,14 +1,17 @@
 from fastapi import APIRouter ,Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.repositories.dashboard import count_orders, avg_reviews, count_customers,total_sales,avg_order_value,sales_trend,get_category_ranking,get_seller_ranking,get_sned_time,get_overview ,get_productsranking
-from app.schemas.dashboard import DashboardOverviewResponse ,Productrankresponse ,CategoryRankingResponse ,Seller_rankresponse ,Send_time_rateresponse
+from app.repositories.dashboard import count_orders, avg_reviews, count_customers,total_sales,avg_order_value,sales_trend,get_category_ranking,get_seller_ranking,get_sned_time,get_overview ,get_productsranking ,get_alerts
+from app.schemas.dashboard import DashboardOverviewResponse ,Productrankresponse ,CategoryRankingResponse ,Seller_rankresponse ,Send_time_rateresponse ,AlertResponse
 from app.api.deps import require_permission
+from app.core.response import ok
+from app.schemas.response import ApiResponse
 router = APIRouter()
 
-@router.get("/overview" , response_model=DashboardOverviewResponse ,dependencies=[Depends(require_permission("dashboard:read"))])
+@router.get("/overview" , response_model=ApiResponse[DashboardOverviewResponse] ,dependencies=[Depends(require_permission("dashboard:read"))])
 def overview(db: Session = Depends(get_db)):
-    return get_overview(db)
+    result = get_overview(db)
+    return ok(result)
 
 @router.get("/trend" ,dependencies=[Depends(require_permission("dashboard:read"))])
 def trend(db: Session = Depends(get_db)):
@@ -41,3 +44,8 @@ def list_productsranking(db : Session = Depends(get_db) , top : int = 10):
     return {
         "product_ranking" : rank
     }
+
+@router.get('/alerts' , response_model=ApiResponse[AlertResponse],dependencies=[Depends(require_permission("dashboard:read"))] )
+def list_alerts(db : Session = Depends(get_db)):
+    alerts = get_alerts(db)
+    return ok(alerts)

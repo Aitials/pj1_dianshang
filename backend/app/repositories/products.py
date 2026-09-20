@@ -35,6 +35,7 @@ def get_category_analysis(db: Session , top):
         .join(Order , OrderItem.order_id == Order.order_id)
         .where(Order.order_status != 'canceled')
         .group_by(Product.product_category_name)
+        .order_by(func.sum(OrderItem.price).desc())
         .limit(top)
     )
     result = db.execute(stmt).all()

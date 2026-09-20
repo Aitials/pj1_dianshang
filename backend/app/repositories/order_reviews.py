@@ -11,5 +11,5 @@ def get_order_reviews(db: Session, page: int, page_size: int):
 
 def get_reviews_byid(db: Session, order_id: str):
     stmt = select(OrderReview).where(OrderReview.order_id == order_id)
-    result = db.execute(stmt).scalar_one_or_none()
+    result = db.execute(stmt).scalars().all()
     return result

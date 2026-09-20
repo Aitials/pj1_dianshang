@@ -83,7 +83,12 @@ async function handleLogin() {
   try {
     const res = await login({ username: form.username, password: form.password })
     authStore.setAuth(res.access_token, res.username)
-    await authStore.loadPermissions()
+    const role = await authStore.loadPermissions()
+    if (!role) {
+      ElMessage.warning('账号暂无权限，请联系管理员分配角色')
+      authStore.logout()
+      return
+    }
     ElMessage.success('登录成功')
     router.push('/dashboard')
   } finally {

@@ -1,8 +1,14 @@
+from typing import cast
 from sqlalchemy import select
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.orm import Session
 from app.models.inventory import Inventory , InventoryLog
+from app.models.operation_log import OperationLog
 from sqlalchemy import func
+from datetime import timedelta
+from app.models.order import Order
+from app.models.order_items import OrderItem
+from app.models.inventory import Inventory
 
 def get_inventory(db: Session ,page ,page_size):
     stmt = (
@@ -46,6 +52,15 @@ def adjust_inventory(db : Session , product_id , change ,reason ,operator):
         operator=operator,
     )
     db.add(log)
+
+    # 记录操作日志
+    op_log = OperationLog(
+        operator=operator,
+        action="adjust_inventory",
+        target=product_id,
+        detail=f"change={change}, reason={reason}",
+    )
+    db.add(op_log)
     db.commit()
 
     return {"product_id": product_id, "before": before, "after": after}
@@ -62,3 +77,97 @@ def get_warnings(db : Session ):
         }
         for i in result
     ]
+
+def get_replenish(replenish_days, db: Session):
+    min_time = db.execute(select(func.min(Order.order_purchase_timestamp))).scalar()
+    max_time = db.execute(select(func.max(Order.order_purchase_timestamp))).scalar()
+    total_days = (max_time - min_time).days
+
+    stmt = (
+        select(OrderItem.product_id,func.count(OrderItem.order_id).label("count")
+        )
+        .select_from(OrderItem)
+        .join(Order,OrderItem.order_id == Order.order_id)
+        .where(Order.order_status != "canceled")
+        .group_by(OrderItem.product_id)
+    )
+
+    result = db.execute(stmt).all()
+
+    # 2. 查询库存
+    stmt2 = select(
+        Inventory.product_id,
+        Inventory.quantity,
+        Inventory.safety_stock
+    )
+
+    inventory_result = db.execute(stmt2).all()
+
+    # 3. 把库存做成 product_id → 库存信息
+    inventory_map = {
+        i.product_id: {
+            "quantity": i.quantity,
+            "safety_stock": i.safety_stock
+        }
+        for i in inventory_result
+    }
+
+    # 4. 合并销量和库存，并计算补货量
+    items = []
+
+    for i in result:
+        inventory = inventory_map.get(i.product_id)
+
+        if inventory is None:
+            continue
+
+        avg_daily_sales = i.count / total_days
+
+        suggest_quantity = max(
+            avg_daily_sales * replenish_days
+            + inventory["safety_stock"]
+            - inventory["quantity"],
+            0
+        )
+
+        items.append({
+            "product_id": i.product_id,
+            "avg_daily_sales": round(avg_daily_sales, 2),
+            "suggest_quantity": round(suggest_quantity, 0),
+            "current_quantity": inventory["quantity"],
+            "safety_stock": inventory["safety_stock"]
+        })
+
+    return {
+        "items": items
+    }
+
+
+def get_inventory_logs( product_id, page, page_size ,db):
+    total = (select(func.count(InventoryLog.id)).where(InventoryLog.product_id == product_id))
+    stmt = (
+        select(InventoryLog)
+        .where(InventoryLog.product_id == product_id)
+        .order_by(InventoryLog.id.desc())
+        .limit(page_size).offset((page - 1) * page_size)
+    )
+    total_count = db.execute(total).scalar()
+    logs = db.scalars(stmt).all()
+    return {
+        "total" :total_count,
+        "page" : page,
+        "page_size" : page_size,
+        "items" : [
+            {
+                "id" : i.id,
+                "product_id": i.product_id,
+                "change" : i.change,
+                "before" : i.before,
+                "after" : i.after,
+                "reason" : i.reason,
+                "operator" : i.operator,
+                "created_at" : i.created_at,
+            }
+            for i in logs
+        ]
+    }

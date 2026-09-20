@@ -63,7 +63,7 @@ async function load() {
       customer_city: filters.customer_city || undefined,
       customer_state: filters.customer_state || undefined,
     })
-    customers.value = res.customers
+    customers.value = res.items
     total.value = res.total
   } finally {
     loading.value = false

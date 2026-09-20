@@ -57,16 +57,18 @@
       </el-table>
     </el-card>
 
-    <el-card v-if="detail.reviews" class="section">
+    <el-card v-if="detail.reviews && detail.reviews.length" class="section">
       <div class="section-title">订单评价</div>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="评分">
-          <el-rate :model-value="detail.reviews.review_score" disabled show-score />
-        </el-descriptions-item>
-        <el-descriptions-item label="评价标题">{{ detail.reviews.review_comment_title || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="评价内容" :span="2">{{ detail.reviews.review_comment_message || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="评价时间">{{ fmtTime(detail.reviews.review_creation_date) }}</el-descriptions-item>
-      </el-descriptions>
+      <div v-for="(rev, idx) in detail.reviews" :key="idx" class="review-item">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="评分">
+            <el-rate :model-value="rev.review_score" disabled show-score />
+          </el-descriptions-item>
+          <el-descriptions-item label="评价标题">{{ rev.review_comment_title || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="评价内容" :span="2">{{ rev.review_comment_message || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="评价时间">{{ fmtTime(rev.review_creation_date) }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
     </el-card>
   </div>
 </template>
@@ -123,6 +125,9 @@ onMounted(load)
   font-size: 15px;
   font-weight: 600;
   color: #0f172a;
+  margin-bottom: 12px;
+}
+.review-item {
   margin-bottom: 12px;
 }
 </style>

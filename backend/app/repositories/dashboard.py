@@ -6,7 +6,10 @@ from app.models.order_reviews import OrderReview
 from app.models.customer import Customer
 from app.models.order_items import OrderItem
 from app.models.products import Product
+from app.models.seller import Seller
 from app.models.order_payments import OrderPayment
+from app.repositories.inventory import get_warnings
+from app.repositories.logistics import get_logistics_overview
 
 
 def count_orders(db : Session ,order_status =None , start_time = None, end_time = None ):
@@ -105,12 +108,18 @@ def get_overview(db):
     tsresult = db.execute(total_sales).scalars().one()
     vresult = db.execute(valid_orders).scalars().one()
     average_order_value = tsresult / vresult if vresult else 0
+    customers_count = count_customers(db)
+    avg_review_score = avg_reviews(db)
+
+
     return {
         "total_orders": tresult,
         "delivered_orders": dresult,
         "canceled_orders": cresult,
         "total_sales": tsresult,
         "average_order_value": average_order_value,
+        "customer_count" : customers_count,
+        "avg_review_score" : round(avg_review_score , 2)
     }
 
 def get_productsranking(db : Session , top):
@@ -155,3 +164,21 @@ def get_category_ranking(db : Session , top):
         }
         for r in rank
     ]
+
+
+def get_alerts(db: Session ):
+    low_inventory = len(get_warnings(db))
+    delay_orders = get_logistics_overview(db).get('delayed_count')
+    stmt = (select(OrderItem.seller_id, OrderItem.order_id).distinct())
+    subquery = stmt.subquery()
+    stmt2 = (select(subquery.c.seller_id,func.avg(OrderReview.review_score))
+    .select_from(subquery)
+    .join(OrderReview, OrderReview.order_id == subquery.c.order_id)
+    .group_by(subquery.c.seller_id)
+    .having(func.avg(OrderReview.review_score) < 3))
+    low_review = len(db.execute(stmt2).all())
+    return {
+        "low_stock_count" : low_inventory,
+        "delayed_order_count" : delay_orders,
+        "low_review_count" : low_review,
+    }

@@ -85,6 +85,12 @@ const routes = [
         component: () => import('../views/Users.vue'),
         meta: { title: '系统用户管理', requiresAdmin: true },
       },
+      {
+        path: 'logs',
+        name: 'Logs',
+        component: () => import('../views/Logs.vue'),
+        meta: { title: '操作日志' },
+      },
     ],
   },
   // 兜底：未实现的菜单，点击显示"开发中"
