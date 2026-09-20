@@ -6,17 +6,20 @@
     </div>
 
     <el-card>
-      <el-tabs v-model="activeTab">
+      <el-tabs v-model="activeTab" @tab-change="onTabChange">
         <!-- 商品列表 -->
         <el-tab-pane label="商品列表" name="list">
           <div class="filter-bar">
-            <el-input
+            <el-select
               v-model="filters.product_category_name"
-              placeholder="按类目名筛选"
+              placeholder="按类目筛选"
               clearable
-              style="width: 220px"
-              @keyup.enter="search"
-            />
+              filterable
+              style="width: 240px"
+              @change="search"
+            >
+              <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+            </el-select>
             <el-button type="primary" @click="search">查询</el-button>
             <el-button @click="reset">重置</el-button>
           </div>
@@ -83,10 +86,10 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
-import { getProducts, getCategoryAnalysis, getRatingRank } from '../api/products'
+import { getProducts, getCategoryAnalysis, getRatingRank, getCategories } from '../api/products'
 
 const router = useRouter()
 
@@ -99,6 +102,13 @@ const page = ref(1)
 const pageSize = ref(20)
 const loading = ref(false)
 const filters = reactive({ product_category_name: '' })
+
+// 类目下拉选项
+const categories = ref([])
+async function loadCategories() {
+  const res = await getCategories()
+  categories.value = res.categories || []
+}
 
 async function load() {
   loading.value = true
@@ -174,12 +184,20 @@ async function loadRating() {
   }
 }
 
-onMounted(async () => {
+onMounted(() => {
   load()
-  categoryChart = echarts.init(categoryChartRef.value)
-  await loadCategory()
-  await loadRating()
+  loadCategories()
+  loadRating()
 })
+
+// 切到"类目分析"tab 时才初始化图表（隐藏容器里 init 会导致宽高为 0、图空白）
+async function onTabChange(name) {
+  if (name === 'category' && !categoryChart) {
+    await nextTick() // 等 tab 的 DOM 更新完、容器可见了再 init，否则宽度是 0
+    categoryChart = echarts.init(categoryChartRef.value)
+    loadCategory()
+  }
+}
 
 onBeforeUnmount(() => {
   categoryChart?.dispose()

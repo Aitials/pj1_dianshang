@@ -67,7 +67,7 @@ def get_seller_review(db: Session ,top):
         .join(OrderReview , OrderReview.order_id == Order.order_id)
         .where(Order.order_status != 'canceled')
         .group_by(Seller.seller_id)
-        .order_by(func.avg(OrderReview.review_score).label('avg_score').desc())
+        .order_by(func.count(distinct(OrderReview.review_id)).desc())
         .limit(top)
     )
     review = db.execute(stmt).all()
@@ -82,5 +82,13 @@ def get_seller_review(db: Session ,top):
             for r in review
         ]
     }
+
+def get_seller_states(db: Session):
+    stmt = (
+        select(distinct(Seller.seller_state))
+        .where(Seller.seller_state.isnot(None))
+        .order_by(Seller.seller_state)
+    )
+    return [r[0] for r in db.execute(stmt).all()]
 
 

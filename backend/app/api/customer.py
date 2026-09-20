@@ -3,7 +3,7 @@ from app.api.deps import require_permission
 from sqlalchemy.orm import Session
 from app.schemas.order import CustomerResponse
 from app.schemas.customer import CustomerRankResponse ,CustomerRepurchaseResponse,CustomerGeoResponse
-from app.repositories.customer import get_customers , get_customer_by_id,count_customers ,get_customer_rank ,get_customer_repurchase ,get_customer_geo
+from app.repositories.customer import get_customers , get_customer_by_id,count_customers ,get_customer_rank ,get_customer_repurchase ,get_customer_geo ,get_customer_states
 from app.core.response import ok, ok_page
 from app.schemas.response import ApiResponse, PageData
 from app.db.session import get_db
@@ -40,6 +40,10 @@ def list_customer_repurchase(db : Session= Depends(get_db)):
 def list_customer_geo(db: Session = Depends(get_db)):
     geo = get_customer_geo(db)
     return ok(geo)
+
+@router.get('/customers/states' ,response_model=ApiResponse[dict],dependencies=[Depends(require_permission("customer:read"))])
+def list_customer_states(db: Session = Depends(get_db)):
+    return ok({"states": get_customer_states(db)})
 
 
 

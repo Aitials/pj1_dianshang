@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends ,HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.product import ProductResponse
 from app.db.session import get_db
-from app.repositories.products import get_products,get_products_byid,count_products ,get_category_analysis ,get_rating_rank
+from app.repositories.products import get_products,get_products_byid,count_products ,get_category_analysis ,get_rating_rank ,get_categories
 from app.api.deps import require_permission
 from app.core.response import ok ,ok_page
 from app.schemas.response import ApiResponse, PageData
@@ -42,9 +42,13 @@ def list_rating_rank(top : int = 10 ,order : str ='desc',min_reviews:int = 10,db
     rank = get_rating_rank(top ,order ,min_reviews ,db)
     return ok(rank)
 
-@router.get("/products/{products_id}" ,response_model=ProductResponse ,dependencies=[Depends(require_permission("product:read"))])
+@router.get('/products/categories' ,response_model=ApiResponse[dict] ,dependencies=[Depends(require_permission("product:read"))])
+def list_categories(db: Session = Depends(get_db)):
+    return ok({"categories": get_categories(db)})
+
+@router.get("/products/{products_id}" ,response_model=ApiResponse[ProductResponse] ,dependencies=[Depends(require_permission("product:read"))])
 def list_product_byid(products_id : str ,db: Session = Depends(get_db)):
     products = get_products_byid(products_id ,db)
     if products is None:
         raise HTTPException(status_code=404, detail="Product not found")
-    return products
+    return ok(products)

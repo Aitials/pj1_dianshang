@@ -8,6 +8,7 @@ from app.api.seller import router as seller_router
 from app.db.session import Base, engine
 from app.api.customer import router as customer_router
 from app.api.order import router as order_router
+from app.api.AI import router as ai_router
 from app.models.role import Role
 from app.models.permission import Permission
 from app.models.user_role import UserRole
@@ -46,6 +47,7 @@ app.include_router(inventory_router, prefix="/api")
 app.include_router(logistics_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
 app.include_router(log_router, prefix="/api")
+app.include_router(ai_router, prefix="/api/ai")
 
 @app.exception_handler(HTTPException)
 async def http_exc_handler(request: Request, exc: HTTPException):

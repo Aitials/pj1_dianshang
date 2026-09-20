@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.db.session import get_db
 from datetime import datetime
 from app.core.response import ApiResponse, ok ,ok_page
-from app.repositories.order import get_orders ,get_order_details
+from app.repositories.order import get_orders ,get_order_details ,get_order_status_distribution ,get_order_monthly_trend
 from app.repositories.order_items import get_orderitemd_byid
 from app.repositories.order_payments import get_payments_byid
 from app.repositories.order_reviews import get_reviews_byid
@@ -33,6 +33,14 @@ def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 ,
     ]
     return ok_page(items,counts ,page,page_size)
 
+@router.get("/orders/status-distribution", response_model=ApiResponse[dict], dependencies=[Depends(require_permission("order:read"))])
+def order_status_distribution(db: Session = Depends(get_db)):
+    return ok(get_order_status_distribution(db))
+
+@router.get("/orders/monthly-trend", response_model=ApiResponse[dict], dependencies=[Depends(require_permission("order:read"))])
+def order_monthly_trend(db: Session = Depends(get_db)):
+    return ok(get_order_monthly_trend(db))
+
 @router.get("/orders/{order_id}", response_model=ApiResponse[OrderDetailResponse] ,dependencies=[Depends(require_permission("order:read"))])
 def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     order_detail = get_order_details(db,order_id)
@@ -42,11 +50,11 @@ def get_order_detail(order_id:str,db: Session = Depends(get_db),):
     payment = get_payments_byid(db,order_id)
     reviews = get_reviews_byid(db,order_id)
     customer = get_customer_by_id(db,order_detail.customer_id)
-    return ok({
-        "order" : order_detail,
-        "customer" : customer,
-        "items" : orderitems,
+    detail = OrderDetailResponse.model_validate({
+        "order": order_detail,
+        "customer": customer,
+        "items": orderitems,
         "payments": payment,
-        "reviews" : reviews
+        "reviews": reviews,
     })
-
+    return ok(detail)

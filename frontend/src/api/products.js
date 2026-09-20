@@ -10,6 +10,11 @@ export function getProductDetail(productId) {
   return request.get(`/products/${productId}`)
 }
 
+// 类目列表（筛选下拉用）
+export function getCategories() {
+  return request.get('/products/categories')
+}
+
 // 类目分析
 export function getCategoryAnalysis(top = 10) {
   return request.get('/products/category-analysis', { params: { top } })

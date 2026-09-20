@@ -7,28 +7,46 @@ from app.schemas.response import ApiResponse
 from app.schemas.inventory import InventoryListResponse ,InventoryitemResponse ,InventoryWarningResponse ,ReplenishResponse ,inventory_logsResponse
 from app.repositories.inventory import get_inventory,adjust_inventory,get_warnings ,get_replenish ,get_inventory_logs
 from app.schemas.AdjustInventory import AdjustInventory
+from app.core.redis import get_cache, set_cache,delete_cache ,delete_cache_pattern
 
 router = APIRouter()
 @router.get("/inventory" , response_model=ApiResponse[InventoryListResponse], dependencies=[Depends(require_permission("inventory:read"))])
 def list_inventory(db : Session = Depends(get_db) , page : int = 1, page_size: int = 20):
+    cache_key = f"inventory:list:page={page}:page_size={page_size}"
+    cached_data = get_cache(cache_key)
+    if cached_data is not None:
+        return ok(cached_data)
     result =  get_inventory(db , page , page_size)
+    set_cache(cache_key, result ,expire=600)
     return ok(result)
 
 @router.post("/adjust/{product_id}/" ,response_model=ApiResponse[InventoryitemResponse], dependencies=[Depends(require_permission("inventory:adjust"))])
 def list_adjust_inventory(product_id :str , body :AdjustInventory,db : Session = Depends(get_db)):
     result =  adjust_inventory(db , product_id , body.change ,body.reason, body.operator )
+    delete_cache("inventory:warnings" )
+    delete_cache_pattern("inventory:replenish:*" ,"inventory:list:*")
     return ok(result)
 
 @router.get("/inventory/warnings" ,response_model=ApiResponse[InventoryWarningResponse],dependencies=[Depends(require_permission("inventory:read"))])
 def list_warnigns(db : Session = Depends(get_db)):
+    cache_key = "inventory:warnings"
+    cached_data = get_cache(cache_key)
+    if cached_data is not None:
+        return ok(cached_data)
     result = {
         "need_fill": get_warnings(db)
     }
+    set_cache(cache_key, result ,expire=600)
     return ok(result)
 
 @router.get('/inventory/replenish' ,response_model=ApiResponse[ReplenishResponse] ,dependencies=[Depends(require_permission("inventory:read"))] )
 def list_replenish(replenish_days:int = 30 ,db : Session = Depends(get_db)):
+    cache_key = f"inventory:replenish:{replenish_days}"
+    cached_data = get_cache(cache_key)
+    if cached_data is not None:
+        return ok(cached_data)
     replenish =get_replenish( replenish_days, db)
+    set_cache(cache_key, replenish ,expire=600)
     return ok(replenish)
 
 @router.get('/inventory/logs' , response_model=ApiResponse[inventory_logsResponse] ,dependencies=[Depends(require_permission("inventory:read"))])

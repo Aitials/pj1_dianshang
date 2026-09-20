@@ -26,8 +26,16 @@ class CategoryRankingItem(BaseModel):
     category_name: str
     sales : Decimal
 
+class trenditResponse(BaseModel):
+    month : str
+    sales :float
+
+class TrendResponse(BaseModel):
+    trend: list[trenditResponse]
+
 class CategoryRankingResponse(BaseModel):
     category_ranking: list[CategoryRankingItem]
+
 
 class Selleritem(BaseModel):
     seller_id: str

@@ -9,3 +9,13 @@ export function getOrders(params, config) {
 export function getOrderDetail(orderId) {
   return request.get(`/orders/${orderId}`)
 }
+
+// 订单状态分布
+export function getOrderStatusDistribution() {
+  return request.get('/orders/status-distribution')
+}
+
+// 月度订单趋势
+export function getOrderMonthlyTrend() {
+  return request.get('/orders/monthly-trend')
+}

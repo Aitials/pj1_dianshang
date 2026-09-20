@@ -137,7 +137,8 @@ def get_replenish(replenish_days, db: Session):
             "current_quantity": inventory["quantity"],
             "safety_stock": inventory["safety_stock"]
         })
-
+    items = [i for i in items if i["suggest_quantity"] > 0]
+    items.sort(key=lambda x: x["suggest_quantity"], reverse=True)
     return {
         "items": items
     }

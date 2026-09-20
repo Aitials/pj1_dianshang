@@ -4,7 +4,7 @@ from app.schemas.seller import SellerResponse ,SellerRankResponse ,Seller_review
 from app.db.session import get_db
 from app.schemas.response import ApiResponse, PageData
 from app.core.response import ok_page, ok
-from app.repositories.seller import get_sellers ,count_sellers ,get_seller_rank ,get_seller_review
+from app.repositories.seller import get_sellers ,count_sellers ,get_seller_rank ,get_seller_review ,get_seller_states
 from app.repositories.seller import get_seller_byid
 from app.api.deps import require_permission
 router = APIRouter()
@@ -25,6 +25,10 @@ def list_sellers(page:int =1 ,page_size :int =10,seller_city:str | None = None,s
     ]
 
     return ok_page(items, count, page, page_size)
+
+@router.get('/sellers/states' ,response_model=ApiResponse[dict],dependencies=[Depends(require_permission("seller:read"))])
+def list_seller_states(db: Session = Depends(get_db)):
+    return ok({"states": get_seller_states(db)})
 
 @router.get("/sellers/{seller_id}" ,response_model=ApiResponse[SellerResponse],dependencies=[Depends(require_permission("seller:read"))])
 def list_seller(seller_id: str, db: Session = Depends(get_db)):

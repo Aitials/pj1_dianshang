@@ -1,4 +1,4 @@
-from sqlalchemy import select ,delete
+from sqlalchemy import select ,delete ,func
 from sqlalchemy.orm import Session
 from app.models.user_role import UserRole
 from app.models.user import User
@@ -59,3 +59,7 @@ def put_user_role(user_id,role_ids,db: Session):
         db.add(UserRole(user_id=user_id, role_id=rid))
     db.commit()
     return {"user_id": user_id, "role_ids": role_ids}
+
+def count_users(db: Session):
+    return db.execute(select(func.count(User.id))).scalar()
+

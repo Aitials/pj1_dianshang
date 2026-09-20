@@ -25,9 +25,13 @@
       </el-table>
 
       <div class="pagination">
-        <el-button size="small" :disabled="page === 1" @click="prevPage">上一页</el-button>
-        <span class="page-num">第 {{ page }} 页</span>
-        <el-button size="small" :disabled="!hasMore" @click="nextPage">下一页</el-button>
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          layout="total, prev, pager, next"
+          @current-change="load"
+        />
       </div>
     </el-card>
 
@@ -85,8 +89,8 @@ import { getUsers, createUser, updateUser, getRoles, assignRole } from '../api/u
 const users = ref([])
 const page = ref(1)
 const pageSize = 20
+const total = ref(0)
 const loading = ref(false)
-const hasMore = ref(false)
 
 const roles = ref([])
 
@@ -103,7 +107,7 @@ async function load() {
   try {
     const res = await getUsers({ page: page.value, page_size: pageSize })
     users.value = res.items
-    hasMore.value = res.items.length === pageSize
+    total.value = res.total
   } finally {
     loading.value = false
   }
@@ -112,20 +116,6 @@ async function load() {
 async function loadRoles() {
   const res = await getRoles()
   roles.value = res.roles
-}
-
-function prevPage() {
-  if (page.value > 1) {
-    page.value--
-    load()
-  }
-}
-
-function nextPage() {
-  if (hasMore.value) {
-    page.value++
-    load()
-  }
 }
 
 function openCreate() {

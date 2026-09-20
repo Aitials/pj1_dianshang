@@ -97,6 +97,14 @@ def get_rating_rank(top: int,order: str,min_reviews: int ,db: Session):
         ]
     }
 
+def get_categories(db: Session):
+    stmt = (
+        select(distinct(Product.product_category_name))
+        .where(Product.product_category_name.isnot(None))
+        .order_by(Product.product_category_name)
+    )
+    return [r[0] for r in db.execute(stmt).all()]
+
 
 
 

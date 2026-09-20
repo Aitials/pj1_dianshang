@@ -110,3 +110,11 @@ def get_customer_geo(db: Session):
             for r in result
         ]
     }
+
+def get_customer_states(db: Session):
+    stmt = (
+        select(distinct(Customer.customer_state))
+        .where(Customer.customer_state.isnot(None))
+        .order_by(Customer.customer_state)
+    )
+    return [r[0] for r in db.execute(stmt).all()]

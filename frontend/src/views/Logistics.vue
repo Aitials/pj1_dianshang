@@ -23,13 +23,8 @@
 
     <!-- 地域分布 -->
     <el-card class="section">
-      <div class="chart-title">各州物流表现（按订单量排序）</div>
-      <el-table :data="geo" v-loading="geoLoading" stripe>
-        <el-table-column prop="state" label="州" width="100" />
-        <el-table-column prop="order_count" label="订单量" />
-        <el-table-column prop="avg_fulfillment_days" label="平均履约天数" />
-        <el-table-column prop="delay_rate" label="延迟率" />
-      </el-table>
+      <div class="chart-title">各州物流表现（订单量 + 延迟率）</div>
+      <div ref="geoChartRef" style="height: 380px"></div>
     </el-card>
   </div>
 </template>
@@ -40,8 +35,8 @@ import * as echarts from 'echarts'
 import { getLogisticsOverview, getLogisticsGeo, getDelayRating } from '../api/logistics'
 
 const data = ref({})
-const geo = ref([])
-const geoLoading = ref(false)
+const geoChartRef = ref(null)
+let geoChart = null
 
 const cards = computed(() => [
   { label: '平均履约时长(天)', value: data.value.avg_delivery_days ?? '-' },
@@ -60,13 +55,22 @@ async function loadOverview() {
 }
 
 async function loadGeo() {
-  geoLoading.value = true
-  try {
-    const res = await getLogisticsGeo()
-    geo.value = res.geo
-  } finally {
-    geoLoading.value = false
-  }
+  const res = await getLogisticsGeo()
+  const list = res.geo || []
+  geoChart.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { data: ['订单量', '延迟率'], top: 0 },
+    grid: { left: 60, right: 60, top: 40, bottom: 30 },
+    xAxis: { type: 'category', data: list.map((i) => i.state) },
+    yAxis: [
+      { type: 'value', name: '订单量' },
+      { type: 'value', name: '延迟率(%)', max: 100 },
+    ],
+    series: [
+      { name: '订单量', type: 'bar', data: list.map((i) => i.order_count), itemStyle: { color: '#2563eb' } },
+      { name: '延迟率', type: 'line', yAxisIndex: 1, data: list.map((i) => i.delay_rate), itemStyle: { color: '#f59e0b' } },
+    ],
+  })
 }
 
 async function loadRatingCompare() {
@@ -90,11 +94,13 @@ async function loadRatingCompare() {
 
 onMounted(async () => {
   ratingChart = echarts.init(ratingChartRef.value)
+  geoChart = echarts.init(geoChartRef.value)
   await Promise.all([loadOverview(), loadGeo(), loadRatingCompare()])
 })
 
 onBeforeUnmount(() => {
   ratingChart?.dispose()
+  geoChart?.dispose()
 })
 </script>
 

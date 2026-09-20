@@ -1,25 +1,24 @@
 from fastapi import APIRouter, Depends ,HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.core.response import ApiResponse, ok
+from app.core.response import ApiResponse, ok ,ok_page
 from app.schemas.user import CreateUser, UpdateUser, UserResponse ,RoleListResponse ,AssignRole ,AssignRoleResponse
-from app.repositories.user import get_users, get_user_by_id ,create_user ,get_user ,update_user_password ,put_user_role ,get_role
+from app.repositories.user import get_users, get_user_by_id ,create_user ,get_user ,update_user_password ,put_user_role ,get_role ,count_users
 from app.api.deps import require_permission, get_current_user
 from app.repositories.operation_log import create_log
 from app.core.security import hash_password
+from app.schemas.response import PageData
+
 
 router = APIRouter()
 
 
-@router.get("/users",response_model=ApiResponse[list[UserResponse]],dependencies=[Depends(require_permission("user:read"))])
+@router.get("/users",response_model=ApiResponse[PageData[UserResponse]],dependencies=[Depends(require_permission("user:read"))])
 def list_users(page: int = 1,page_size: int = 20,db: Session = Depends(get_db),):
     users = get_users(db, page, page_size)
-    return ok([
-            {
-                "id": user.id,
-                "username": user.username,
-            }
-            for user in users])
+    total = count_users(db)
+    items = [{"id": u.id, "username": u.username} for u in users]
+    return ok_page(items, total, page, page_size)
 
 @router.get("/users/{user_id}",response_model=ApiResponse[UserResponse],dependencies=[Depends(require_permission("user:read"))])
 def get_user_detail(user_id: int,db: Session = Depends(get_db),):
