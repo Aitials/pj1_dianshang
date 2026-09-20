@@ -97,17 +97,20 @@ def get_overview(db):
     delivered_orders = select(func.count(Order.order_id)).where(
     Order.order_status == "delivered")
     canceled_orders = select(func.count(Order.order_id)).where(Order.order_status == "canceled")
-    total_sales = select(func.sum(OrderPayment.payment_value)).where(Order.order_status == "canceled")
-
+    total_sales = select(func.sum(OrderPayment.payment_value)).join(Order,OrderPayment.order_id == Order.order_id).where(Order.order_status != "canceled")
+    valid_orders = select(func.count(Order.order_id)).where(Order.order_status != "canceled")
     tresult = db.execute(total_orders).scalars().one()
     dresult = db.execute(delivered_orders).scalars().one()
     cresult = db.execute(canceled_orders).scalars().one()
     tsresult = db.execute(total_sales).scalars().one()
+    vresult = db.execute(valid_orders).scalars().one()
+    average_order_value = tsresult / vresult if vresult else 0
     return {
         "total_orders": tresult,
         "delivered_orders": dresult,
         "canceled_orders": cresult,
         "total_sales": tsresult,
+        "average_order_value": average_order_value,
     }
 
 def get_productsranking(db : Session , top):

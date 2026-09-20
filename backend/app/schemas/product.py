@@ -14,3 +14,22 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class CategoryResponse(BaseModel):
+    category_name: str
+    sales: float
+    order_count : int
+    avg_price : float
+
+class CategoryanaResponse(BaseModel):
+    top : int
+    category_analysis : list[CategoryResponse]
+
+class ratingitResponse(BaseModel):
+    product_id : str
+    avg_score : float
+    review_count :int
+
+class ratingRankResponse(BaseModel):
+    top : int
+    rating_rank :list[ratingitResponse]

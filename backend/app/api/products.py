@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends ,HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.product import ProductResponse
 from app.db.session import get_db
-from app.repositories.products import get_products,get_products_byid,count_products
+from app.repositories.products import get_products,get_products_byid,count_products ,get_category_analysis ,get_rating_rank
 from app.api.deps import require_permission
+from app.core.response import ok
+from app.schemas.response import ApiResponse, PageData
+from app.schemas.product import CategoryanaResponse ,ratingRankResponse
 router = APIRouter()
 
 
@@ -29,6 +32,15 @@ def list_products(page: int , page_size: int ,product_category_name :str | None 
         ]
     }
 
+@router.get('/products/category-analysis' ,response_model=ApiResponse[CategoryanaResponse],dependencies=[Depends(require_permission("product:read"))])
+def list_category_analysis(db: Session = Depends(get_db) , top : int = 10):
+    resul = get_category_analysis(db ,top)
+    return ok(resul)
+
+@router.get('/products/rating_rank' ,response_model=ApiResponse[ratingRankResponse] , dependencies=[Depends(require_permission("product:read"))])
+def list_rating_rank(top : int = 10 ,order : str ='desc',min_reviews:int = 10,db: Session = Depends(get_db)):
+    rank = get_rating_rank(top ,order ,min_reviews ,db)
+    return ok(rank)
 
 @router.get("/products/{products_id}" ,response_model=ProductResponse ,dependencies=[Depends(require_permission("product:read"))])
 def list_product_byid(products_id : str ,db: Session = Depends(get_db)):
