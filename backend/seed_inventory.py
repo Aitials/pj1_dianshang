@@ -16,12 +16,23 @@
 使用方法:
   cd backend && python seed_inventory.py
 """
+import os
 import random
 import datetime
+from pathlib import Path
+
 import pymysql
+from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
 
 SEED = 7
-CONN = dict(host='localhost', user='root', password='mysql', database='olist', charset='utf8mb4')
+
+# 连接信息不再硬编码：本地跑读 backend/.env，容器里跑读 compose 注入的 DATABASE_URL，
+# 否则容器内 localhost 会指向自身而不是 mysql 服务。
+load_dotenv(Path(__file__).resolve().parent / ".env")
+_db_url = make_url(os.getenv("DATABASE_URL"))
+CONN = dict(host=_db_url.host, port=_db_url.port or 3306, user=_db_url.username,
+            password=_db_url.password, database=_db_url.database, charset="utf8mb4")
 
 REASONS = ['期初库存初始化', '采购入库', '出库发货', '盘点调整', '退货入库']
 OPERATORS = ['admin', 'warehouse_01', 'warehouse_02', 'operator_zhang', 'operator_li']

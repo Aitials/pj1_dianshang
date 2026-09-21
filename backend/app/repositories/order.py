@@ -14,7 +14,8 @@ def get_orders(db: Session, page, page_size, order_status=None ,start_time=None,
         stmt = stmt.where(Order.order_purchase_timestamp >= start_time)
 
     if end_time is not None:
-        stmt = stmt.where(Order.order_purchase_timestamp <= end_time)
+        # end_time 是排他上界（API 层已换算为次日 00:00），必须用 < 才能覆盖当天全部数据
+        stmt = stmt.where(Order.order_purchase_timestamp < end_time)
 
     stmt = stmt.limit(page_size).offset((page - 1) * page_size)
 

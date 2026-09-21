@@ -1,4 +1,5 @@
 from typing import cast
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.orm import Session
@@ -41,6 +42,18 @@ def adjust_inventory(db : Session , product_id , change ,reason ,operator):
     else:
         before = inv.quantity
     after = before + change  # 算 after
+
+    # change 本身无边界校验，负数是合法的出库方向，所以只能校验「结果」：
+    # 出库量大于当前库存时必须拒绝，否则 quantity 会被直接写成负数。
+    if after < 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"库存不足：当前库存 {before}，本次调整 {change}，调整后将为 {after}",
+        )
+    # change=0 不改变库存，却会白写一条库存流水和一条操作日志，直接拒绝。
+    if change == 0:
+        raise HTTPException(status_code=400, detail="调整数量不能为 0")
+
     inv.quantity = after  # 改 Inventory
 
     log = InventoryLog(  # 写流水（before 必须给）

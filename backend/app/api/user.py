@@ -62,7 +62,7 @@ def list_role(db: Session = Depends(get_db)):
 
 
 @router.put("/users/{user_id}",response_model=ApiResponse[UserResponse],dependencies=[Depends(require_permission("user:update"))])
-def update_user(user_id: int,body: UpdateUser,db: Session = Depends(get_db),):
+def update_user(user_id: int,body: UpdateUser,db: Session = Depends(get_db),current_user=Depends(get_current_user)):
     user = get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(
@@ -70,6 +70,8 @@ def update_user(user_id: int,body: UpdateUser,db: Session = Depends(get_db),):
             detail="User not found"
         )
     update_user_password(db,user,hash_password(body.password))
+
+    create_log(db, current_user.username, "update_user", str(user_id), f"username={user.username}")
 
     return ok({
         "id": user.id,

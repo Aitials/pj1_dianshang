@@ -1,3 +1,5 @@
+import logging
+from sqlalchemy.exc import SQLAlchemyError
 from fastapi import FastAPI ,Request ,HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -26,7 +28,7 @@ from app.api.logistics import router as logistics_router
 from app.api.user import router as user_router
 from app.api.log import router as log_router
 app = FastAPI()
-
+logger = logging.getLogger( "app.api" )
 
 @app.get("/healthy")
 def health_check():
@@ -58,5 +60,15 @@ async def http_exc_handler(request: Request, exc: HTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exc_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content=fail(422, "参数校验失败"))
+
+@app.exception_handler( SQLAlchemyError )
+async def db_exc_handler ( request: Request, exc: SQLAlchemyError ):
+    logger.error( "数据库异常 %s %s" , request.method, request.url.path, exc_info=exc)
+    return JSONResponse(status_code= 500 , content=fail( 500 , "数据库操作失败" ))
+
+@app.exception_handler( Exception )
+async def unhandled_exc_handler ( request: Request, exc: Exception ):
+    logger.error( "未处理异常 %s %s" , request.method, request.url.path, exc_info=exc)
+    return JSONResponse(status_code= 500 , content=fail( 500 , "服务器内部错误" ))
 
 Base.metadata.create_all(bind=engine)

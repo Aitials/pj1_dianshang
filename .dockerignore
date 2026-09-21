@@ -1,0 +1,28 @@
+# 构建上下文是仓库根目录，忽略规则会对两个 Dockerfile 同时生效
+
+# 虚拟环境与依赖目录：容器里都会重新安装，拷进去只会拖慢构建
+.venv
+backend/.venv
+frontend/node_modules
+frontend/dist
+
+# 环境变量文件：密钥绝不进镜像，容器内的配置由 docker-compose 的 env_file/environment 注入
+.env
+backend/.env
+
+# 原始数据集 120MB：只有 loader 服务需要，运行时用 volume 挂载，不进镜像也不进构建上下文
+data/
+
+# Python / 测试缓存
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.pytest_cache/
+
+# 文档与版本控制
+docs/
+.git
+.gitignore
+docker-compose.yml
+README.md

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException ,Query
 from app.db.session import get_db
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.response import ApiResponse, ok ,ok_page
 from app.repositories.order import get_orders ,get_order_details ,get_order_status_distribution ,get_order_monthly_trend
 from app.repositories.order_items import get_orderitemd_byid
@@ -16,6 +16,13 @@ from app.schemas.response import PageData
 router = APIRouter()
 @router.get("/orders" ,response_model=ApiResponse[PageData[OrderResponse]],dependencies=[Depends(require_permission("order:read"))])
 def list_orders(db : Session = Depends(get_db),page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100), order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
+    # 前端按日期筛选，解析结果落在当天 00:00:00。若直接 <= 该值，当天 00:00 之后的数据
+    # 会全部被排除（同一天区间甚至会返回 0 条），因此把 end_time 统一视为「包含该日」，
+    # 换算成次日 00:00 的排他上界。get_orders 与 count_orders 必须收到同一个值，
+    # 否则分页 items 与 total 口径会不一致。
+    if end_time is not None:
+        end_time = end_time + timedelta(days=1)
+
     orders= get_orders(db,page,page_size ,order_status , start_time, end_time)
     counts = count_orders(db ,order_status , start_time, end_time)
     items = [
