@@ -10,7 +10,7 @@ from app.repositories.permission import get_user_roles
 router = APIRouter()
 
 
-@router.post("/login")
+@router.post("/login" ,)
 def login(user: LoginUser, db: Session = Depends(get_db)):
     current_user = authenticate_user(db, user.username, user.password)
 

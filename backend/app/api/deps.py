@@ -8,10 +8,7 @@ from app.repositories.user import get_user
 
 security = HTTPBearer()
 
-def page_params(
-    page: int = Query(1, ge=1, description="页码，从 1 开始"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量，上限 100"),
-):
+def page_params(page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100)):
     return {"page": page, "page_size": page_size,
             "offset": (page - 1) * page_size, "limit": page_size}
 

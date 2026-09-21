@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException ,Query
 from app.db.session import get_db
 from datetime import datetime
 from app.core.response import ApiResponse, ok ,ok_page
@@ -15,7 +15,7 @@ from app.schemas.response import PageData
 
 router = APIRouter()
 @router.get("/orders" ,response_model=ApiResponse[PageData[OrderResponse]],dependencies=[Depends(require_permission("order:read"))])
-def list_orders(db : Session = Depends(get_db),page: int =1,page_size: int =20 , order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
+def list_orders(db : Session = Depends(get_db),page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100), order_status: str | None = None ,start_time: datetime | None = None, end_time: datetime | None = None):
     orders= get_orders(db,page,page_size ,order_status , start_time, end_time)
     counts = count_orders(db ,order_status , start_time, end_time)
     items = [

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends ,HTTPException
 from app.api.deps import require_permission
+from fastapi import Query
 from sqlalchemy.orm import Session
 from app.schemas.order import CustomerResponse
 from app.schemas.customer import CustomerRankResponse ,CustomerRepurchaseResponse,CustomerGeoResponse
@@ -10,7 +11,7 @@ from app.db.session import get_db
 router = APIRouter()
 
 @router.get('/customers' ,response_model=ApiResponse[PageData[CustomerResponse]], dependencies=[Depends(require_permission("customer:read"))])
-def list_customers(page :int = 1,page_size:int =10 ,customer_city:str | None = None,customer_state:str | None = None,db: Session = Depends(get_db)):
+def list_customers(page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100),customer_city:str | None = None,customer_state:str | None = None,db: Session = Depends(get_db)):
     customers = get_customers(page ,page_size,customer_city,customer_state,db)
     count = count_customers(customer_city,customer_state,db)
     items = [
@@ -27,7 +28,7 @@ def list_customers(page :int = 1,page_size:int =10 ,customer_city:str | None = N
     return ok_page(items,count,page,page_size)
 
 @router.get('/customers/ranking' , response_model=ApiResponse[CustomerRankResponse],dependencies=[Depends(require_permission("customer:read"))])
-def list_customer_rank(top:int =10, db: Session = Depends(get_db)):
+def list_customer_rank(top: int = Query(10, ge=1, le=100), db: Session = Depends(get_db)):
     rank = get_customer_rank(top,db)
     return ok(rank)
 

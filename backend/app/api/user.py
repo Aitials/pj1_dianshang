@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends ,HTTPException
+from fastapi import APIRouter, Depends ,HTTPException ,Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.response import ApiResponse, ok ,ok_page
@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get("/users",response_model=ApiResponse[PageData[UserResponse]],dependencies=[Depends(require_permission("user:read"))])
-def list_users(page: int = 1,page_size: int = 20,db: Session = Depends(get_db),):
+def list_users(page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100),db: Session = Depends(get_db),):
     users = get_users(db, page, page_size)
     total = count_users(db)
     items = [{"id": u.id, "username": u.username} for u in users]

@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.translation import get_translations
 
 router = APIRouter()
 
 
-@router.get("/translation")
+@router.get("/translation" ,dependencies=[Depends(require_permission("product:read"))])
 def list_translations(db: Session = Depends(get_db)):
     translations = get_translations(db)
     return {

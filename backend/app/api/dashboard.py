@@ -1,4 +1,4 @@
-from fastapi import APIRouter ,Depends
+from fastapi import APIRouter ,Depends ,Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.redis import get_cache, set_cache
@@ -35,7 +35,7 @@ def trend(db: Session = Depends(get_db)):
     return ok({"trend":trend_data})
 
 @router.get("/category-ranking", response_model=ApiResponse[CategoryRankingResponse] ,dependencies=[Depends(require_permission("dashboard:read"))])
-def list_category_ranking(db : Session = Depends(get_db) , top : int = 10):
+def list_category_ranking(db : Session = Depends(get_db) ,top: int = Query(10, ge=1, le=100)):
     cache_key = f"dashboard:category-ranking:{top}"
     cached_data = get_cache(cache_key)
     if cached_data is not None:
@@ -46,7 +46,7 @@ def list_category_ranking(db : Session = Depends(get_db) , top : int = 10):
 
 
 @router.get("/seller_ranking" ,response_model=ApiResponse[Seller_rankresponse] ,dependencies=[Depends(require_permission("dashboard:read"))])
-def list_seller_ranking(db : Session = Depends(get_db) , top : int = 10):
+def list_seller_ranking(db : Session = Depends(get_db) , top: int = Query(10, ge=1, le=100)):
     cache_key = f"dashboard:seller-ranking:{top}"
     cached_data = get_cache(cache_key)
     if cached_data is not None:
@@ -64,7 +64,7 @@ def list_send_rate(db : Session = Depends(get_db)):
     })
 
 @router.get("/products_ranking" ,response_model=ApiResponse[Productrankresponse] ,dependencies=[Depends(require_permission("dashboard:read"))])
-def list_productsranking(db : Session = Depends(get_db) , top : int = 10):
+def list_productsranking(db : Session = Depends(get_db) , top: int = Query(10, ge=1, le=100)):
     cache_key = f"dashboard:products-ranking:{top}"
     cached_data = get_cache(cache_key)
     if cached_data is not None:

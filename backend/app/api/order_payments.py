@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends ,Query
 from sqlalchemy.orm import Session
 
+from app.api.deps import require_permission
 from app.db.session import get_db
 from app.repositories.order_payments import get_order_payments
 
 router = APIRouter()
 
 
-@router.get("/payments")
-def list_order_payments(db: Session = Depends(get_db), page: int = 1, page_size: int = 20):
+@router.get("/payments" ,dependencies=[Depends(require_permission("order:read"))])
+def list_order_payments(db: Session = Depends(get_db),page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100)):
     payments = get_order_payments(db, page, page_size)
     return {
         "items": [

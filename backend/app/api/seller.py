@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends ,HTTPException
+from fastapi import APIRouter, Depends ,HTTPException ,Query
 from sqlalchemy.orm import Session
 from app.schemas.seller import SellerResponse ,SellerRankResponse ,Seller_reviewResoinse
 from app.db.session import get_db
@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/sellers" , response_model=ApiResponse[PageData[SellerResponse]],dependencies=[Depends(require_permission("seller:read"))])
-def list_sellers(page:int =1 ,page_size :int =10,seller_city:str | None = None,seller_state :str | None = None ,db: Session = Depends(get_db)):
+def list_sellers(page:int = Query(1,ge =1) ,page_size : int = Query(10 , ge=1, le=100),seller_city:str | None = None,seller_state :str | None = None ,db: Session = Depends(get_db)):
     sellers = get_sellers(page ,page_size,seller_city,seller_state,db)
     count = count_sellers(seller_city,seller_state,db)
     items = [
@@ -38,11 +38,11 @@ def list_seller(seller_id: str, db: Session = Depends(get_db)):
     return ok(sellers)
 
 @router.get('/seller/rank' ,response_model=ApiResponse[SellerRankResponse],dependencies=[Depends(require_permission("seller:read"))])
-def list_seller_rank(top : int =10 ,db: Session = Depends(get_db)):
+def list_seller_rank(top: int = Query(10, ge=1, le=100),db: Session = Depends(get_db)):
     rank = get_seller_rank(top ,db)
     return ok(rank)
 
 @router.get('/seller/review' ,response_model=ApiResponse[Seller_reviewResoinse] ,dependencies=[Depends(require_permission("seller:read"))])
-def list_seller_review(db: Session = Depends(get_db), top :int =20):
+def list_seller_review(db: Session = Depends(get_db), top: int = Query(10, ge=1, le=100)):
     reviews = get_seller_review(db ,top)
     return ok(reviews)
