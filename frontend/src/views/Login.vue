@@ -64,7 +64,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Shop, User, Lock } from '@element-plus/icons-vue'
 import { login, register } from '../api/auth'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, ROLE_MENUS } from '../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -90,7 +90,9 @@ async function handleLogin() {
       return
     }
     ElMessage.success('登录成功')
-    router.push('/dashboard')
+    // 跳转到该角色第一个可访问菜单（避免 warehouse 无 dashboard 权限还跳过去弹错误）
+    const allowed = ROLE_MENUS[role] || []
+    router.push(allowed[0] || '/dashboard')
   } finally {
     loading.value = false
   }

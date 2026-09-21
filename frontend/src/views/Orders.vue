@@ -7,6 +7,20 @@
 
     <el-card>
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
+        <!-- 订单分析 -->
+        <el-tab-pane label="订单分析" name="analysis">
+          <el-row :gutter="16">
+            <el-col :span="10">
+              <div class="chart-title">订单状态分布</div>
+              <div ref="statusChartRef" style="height: 360px"></div>
+            </el-col>
+            <el-col :span="14">
+              <div class="chart-title">月度订单趋势（订单量 + 销售额）</div>
+              <div ref="trendChartRef" style="height: 360px"></div>
+            </el-col>
+          </el-row>
+        </el-tab-pane>
+
         <!-- 订单列表 -->
         <el-tab-pane label="订单列表" name="list">
           <div class="filter-bar">
@@ -55,20 +69,6 @@
             />
           </div>
         </el-tab-pane>
-
-        <!-- 订单分析 -->
-        <el-tab-pane label="订单分析" name="analysis">
-          <el-row :gutter="16">
-            <el-col :span="10">
-              <div class="chart-title">订单状态分布</div>
-              <div ref="statusChartRef" style="height: 360px"></div>
-            </el-col>
-            <el-col :span="14">
-              <div class="chart-title">月度订单趋势（订单量 + 销售额）</div>
-              <div ref="trendChartRef" style="height: 360px"></div>
-            </el-col>
-          </el-row>
-        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -82,7 +82,7 @@ import { getOrders, getOrderStatusDistribution, getOrderMonthlyTrend } from '../
 
 const router = useRouter()
 
-const activeTab = ref('list')
+const activeTab = ref('analysis')
 
 const statusOptions = ['created', 'approved', 'invoiced', 'processing', 'shipped', 'delivered', 'canceled', 'unavailable']
 
@@ -212,7 +212,15 @@ async function onTabChange(name) {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  load()
+  // 默认 tab 是订单分析，页面加载时就初始化图表
+  await nextTick()
+  statusChart = echarts.init(statusChartRef.value)
+  trendChart = echarts.init(trendChartRef.value)
+  loadStatusDistribution()
+  loadMonthlyTrend()
+})
 
 onBeforeUnmount(() => {
   statusChart?.dispose()

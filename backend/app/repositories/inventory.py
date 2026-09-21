@@ -172,3 +172,13 @@ def get_inventory_logs( product_id, page, page_size ,db):
             for i in logs
         ]
     }
+
+def get_data(product_id, db : Session):
+    inv = db.get(Inventory, product_id)
+    if inv is None:
+        return None
+    return {
+        "product_id": inv.product_id,
+        "quantity": inv.quantity,
+        "safe_stock": inv.safety_stock,
+    }

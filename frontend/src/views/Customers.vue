@@ -6,43 +6,6 @@
     </div>
     <el-card>
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
-        <!-- 客户列表 -->
-        <el-tab-pane label="客户列表" name="list">
-          <div class="filter-bar">
-            <el-input v-model="filters.customer_city" placeholder="按城市筛选" clearable style="width: 180px" @keyup.enter="search" />
-            <el-select v-model="filters.customer_state" placeholder="按州筛选" clearable style="width: 160px" @change="search">
-              <el-option v-for="s in states" :key="s" :label="s" :value="s" />
-            </el-select>
-            <el-button type="primary" @click="search">查询</el-button>
-            <el-button @click="reset">重置</el-button>
-          </div>
-
-          <el-table :data="customers" v-loading="loading" stripe>
-            <el-table-column prop="customer_id" label="客户ID" width="230" show-overflow-tooltip />
-            <el-table-column prop="customer_unique_id" label="唯一客户ID" width="230" show-overflow-tooltip />
-            <el-table-column prop="customer_zip_code_prefix" label="邮编" width="100" />
-            <el-table-column prop="customer_city" label="城市" />
-            <el-table-column prop="customer_state" label="州" width="80" />
-            <el-table-column label="操作" width="100" fixed="right">
-              <template #default="{ row }">
-                <el-button size="small" type="primary" link @click="goDetail(row)">详情</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="pagination">
-            <el-pagination
-              v-model:current-page="page"
-              v-model:page-size="pageSize"
-              :total="total"
-              :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next"
-              @current-change="load"
-              @size-change="search"
-            />
-          </div>
-        </el-tab-pane>
-
         <!-- 消费排行 -->
         <el-tab-pane label="消费排行" name="ranking">
           <div class="chart-title">客户消费额 Top 10</div>
@@ -79,6 +42,43 @@
           <div class="chart-title">各州客户分布</div>
           <div ref="geoChartRef" style="height: 500px"></div>
         </el-tab-pane>
+
+        <!-- 客户列表 -->
+        <el-tab-pane label="客户列表" name="list">
+          <div class="filter-bar">
+            <el-input v-model="filters.customer_city" placeholder="按城市筛选" clearable style="width: 180px" @keyup.enter="search" />
+            <el-select v-model="filters.customer_state" placeholder="按州筛选" clearable style="width: 160px" @change="search">
+              <el-option v-for="s in states" :key="s" :label="s" :value="s" />
+            </el-select>
+            <el-button type="primary" @click="search">查询</el-button>
+            <el-button @click="reset">重置</el-button>
+          </div>
+
+          <el-table :data="customers" v-loading="loading" stripe>
+            <el-table-column prop="customer_id" label="客户ID" width="230" show-overflow-tooltip />
+            <el-table-column prop="customer_unique_id" label="唯一客户ID" width="230" show-overflow-tooltip />
+            <el-table-column prop="customer_zip_code_prefix" label="邮编" width="100" />
+            <el-table-column prop="customer_city" label="城市" />
+            <el-table-column prop="customer_state" label="州" width="80" />
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" type="primary" link @click="goDetail(row)">详情</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div class="pagination">
+            <el-pagination
+              v-model:current-page="page"
+              v-model:page-size="pageSize"
+              :total="total"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next"
+              @current-change="load"
+              @size-change="search"
+            />
+          </div>
+        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -92,7 +92,7 @@ import { getCustomers, getCustomerStates, getCustomerRanking, getCustomerRepurch
 
 const router = useRouter()
 
-const activeTab = ref('list')
+const activeTab = ref('ranking')
 
 // 客户列表
 const customers = ref([])
@@ -232,9 +232,13 @@ async function onTabChange(name) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   load()
   loadStates()
+  // 默认 tab 是消费排行，页面加载时就初始化图表
+  await nextTick()
+  rankChart = echarts.init(rankChartRef.value)
+  loadRanking()
 })
 
 onBeforeUnmount(() => {

@@ -43,6 +43,12 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- AI 助手悬浮按钮 -->
+    <div v-if="$route.path !== '/ai'" class="ai-fab" @click="goAi">
+      <el-icon :size="20"><MagicStick /></el-icon>
+      <span>AI 助手</span>
+    </div>
   </el-container>
 </template>
 
@@ -64,6 +70,7 @@ const menus = [
   { path: '/sellers', title: '卖家分析', icon: 'Shop' },
   { path: '/logistics', title: '物流分析', icon: 'Van' },
   { path: '/inventory', title: '库存管理', icon: 'Box' },
+  { path: '/ai', title: 'AI 运营助手', icon: 'ChatDotRound' },
   { path: '/users', title: '系统用户管理', icon: 'Setting' },
   { path: '/logs', title: '操作日志', icon: 'Document' },
 ]
@@ -81,6 +88,11 @@ function handleCommand(command) {
     authStore.logout()
     router.push('/login')
   }
+}
+
+// 跳转到 AI 助手
+function goAi() {
+  router.push('/ai')
 }
 </script>
 
@@ -155,5 +167,30 @@ function handleCommand(command) {
 .main {
   background: #f1f5f9;
   padding: 20px;
+}
+
+/* AI 助手悬浮按钮 */
+.ai-fab {
+  position: fixed;
+  right: 32px;
+  bottom: 40px;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  transition: all 0.25s;
+  z-index: 1000;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ai-fab:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.55);
 }
 </style>

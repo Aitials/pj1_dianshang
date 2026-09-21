@@ -7,6 +7,36 @@
 
     <el-card>
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
+        <!-- 类目分析 -->
+        <el-tab-pane label="类目分析" name="category">
+          <div class="chart-title" style="margin-bottom: 12px">类目销售额 Top 10</div>
+          <div ref="categoryChartRef" style="height: 380px"></div>
+          <el-table :data="categoryAnalysis" v-loading="categoryLoading" stripe style="margin-top: 16px">
+            <el-table-column prop="category_name" label="类目" />
+            <el-table-column prop="sales" label="销售额" />
+            <el-table-column prop="order_count" label="订单量" />
+            <el-table-column prop="avg_price" label="平均单价" />
+          </el-table>
+        </el-tab-pane>
+
+        <!-- 评分排行 -->
+        <el-tab-pane label="商品评分排行" name="rating">
+          <div class="filter-bar">
+            <el-radio-group v-model="ratingOrder" @change="loadRating">
+              <el-radio-button value="desc">高分在前</el-radio-button>
+              <el-radio-button value="asc">低分在前</el-radio-button>
+            </el-radio-group>
+            <span class="tip">最少评论数</span>
+            <el-input-number v-model="minReviews" :min="1" :max="500" @change="loadRating" style="width: 130px" />
+            <el-button type="primary" @click="loadRating">刷新</el-button>
+          </div>
+          <el-table :data="ratingRank" v-loading="ratingLoading" stripe>
+            <el-table-column prop="product_id" label="商品ID" width="230" show-overflow-tooltip />
+            <el-table-column prop="avg_score" label="平均评分" width="120" />
+            <el-table-column prop="review_count" label="评论数" width="120" />
+          </el-table>
+        </el-tab-pane>
+
         <!-- 商品列表 -->
         <el-tab-pane label="商品列表" name="list">
           <div class="filter-bar">
@@ -50,36 +80,6 @@
             />
           </div>
         </el-tab-pane>
-
-        <!-- 类目分析 -->
-        <el-tab-pane label="类目分析" name="category">
-          <div class="chart-title" style="margin-bottom: 12px">类目销售额 Top 10</div>
-          <div ref="categoryChartRef" style="height: 380px"></div>
-          <el-table :data="categoryAnalysis" v-loading="categoryLoading" stripe style="margin-top: 16px">
-            <el-table-column prop="category_name" label="类目" />
-            <el-table-column prop="sales" label="销售额" />
-            <el-table-column prop="order_count" label="订单量" />
-            <el-table-column prop="avg_price" label="平均单价" />
-          </el-table>
-        </el-tab-pane>
-
-        <!-- 评分排行 -->
-        <el-tab-pane label="商品评分排行" name="rating">
-          <div class="filter-bar">
-            <el-radio-group v-model="ratingOrder" @change="loadRating">
-              <el-radio-button value="desc">高分在前</el-radio-button>
-              <el-radio-button value="asc">低分在前</el-radio-button>
-            </el-radio-group>
-            <span class="tip">最少评论数</span>
-            <el-input-number v-model="minReviews" :min="1" :max="500" @change="loadRating" style="width: 130px" />
-            <el-button type="primary" @click="loadRating">刷新</el-button>
-          </div>
-          <el-table :data="ratingRank" v-loading="ratingLoading" stripe>
-            <el-table-column prop="product_id" label="商品ID" width="230" show-overflow-tooltip />
-            <el-table-column prop="avg_score" label="平均评分" width="120" />
-            <el-table-column prop="review_count" label="评论数" width="120" />
-          </el-table>
-        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -93,7 +93,7 @@ import { getProducts, getCategoryAnalysis, getRatingRank, getCategories } from '
 
 const router = useRouter()
 
-const activeTab = ref('list')
+const activeTab = ref('category')
 
 // 商品列表
 const products = ref([])
@@ -184,10 +184,14 @@ async function loadRating() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   load()
   loadCategories()
   loadRating()
+  // 默认 tab 是类目分析，页面加载时就初始化图表
+  await nextTick()
+  categoryChart = echarts.init(categoryChartRef.value)
+  loadCategory()
 })
 
 // 切到"类目分析"tab 时才初始化图表（隐藏容器里 init 会导致宽高为 0、图空白）

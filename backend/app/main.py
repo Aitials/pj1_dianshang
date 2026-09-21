@@ -14,6 +14,7 @@ from app.models.permission import Permission
 from app.models.user_role import UserRole
 from app.models.role_permission import RolePermission
 from app.models.operation_log import OperationLog
+from app.models.ai_analysis import AiAnalysis
 from app.api.order_reviews import router as reviews_router
 from app.api.order_items import router as items_router
 from app.api.order_payments import router as payments_router

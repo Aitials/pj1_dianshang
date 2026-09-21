@@ -10,6 +10,11 @@ export function adjustInventory(productId, data) {
   return request.post(`/adjust/${productId}/`, data)
 }
 
+// 按商品ID查询单个库存
+export function getInventoryDetail(productId) {
+  return request.get('/inventory/detail', { params: { product_id: productId } })
+}
+
 // 低库存预警
 export function getWarnings() {
   return request.get('/inventory/warnings')

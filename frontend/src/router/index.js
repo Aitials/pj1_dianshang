@@ -11,7 +11,12 @@ const routes = [
   {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
-    redirect: '/dashboard',
+    // 按角色落到第一个可访问菜单：warehouse 没有 dashboard 权限，
+    // 固定跳 /dashboard 会被守卫拦下并弹"没有权限"的提示
+    redirect: () => {
+      const role = localStorage.getItem('role')
+      return (ROLE_MENUS[role] || [])[0] || '/dashboard'
+    },
     children: [
       {
         path: 'dashboard',
@@ -80,6 +85,12 @@ const routes = [
         meta: { title: '库存管理' },
       },
       {
+        path: 'ai',
+        name: 'AIChat',
+        component: () => import('../views/AIChat.vue'),
+        meta: { title: 'AI 运营助手' },
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/Users.vue'),
@@ -117,7 +128,8 @@ router.beforeEach((to, from, next) => {
   if (token && to.path !== '/login' && to.path !== '/') {
     const role = localStorage.getItem('role')
     if (!role) {
-      // 未分配角色
+      // 已登录但没有角色信息：提示原因再回登录页，避免静默跳转
+      ElMessage.warning('账号暂无权限，请联系管理员分配角色')
       next('/login')
       return
     }

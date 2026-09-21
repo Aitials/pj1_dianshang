@@ -6,6 +6,18 @@
     </div>
     <el-card>
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
+        <!-- 销售排行 -->
+        <el-tab-pane label="销售排行" name="ranking">
+          <div class="chart-title">卖家销售额 Top 10</div>
+          <div ref="rankChartRef" style="height: 460px"></div>
+        </el-tab-pane>
+
+        <!-- 评分表现 -->
+        <el-tab-pane label="评分表现" name="review">
+          <div class="chart-title">卖家评分 vs 评论数（Top 20）</div>
+          <div ref="reviewChartRef" style="height: 460px"></div>
+        </el-tab-pane>
+
         <!-- 卖家列表 -->
         <el-tab-pane label="卖家列表" name="list">
           <div class="filter-bar">
@@ -41,18 +53,6 @@
             />
           </div>
         </el-tab-pane>
-
-        <!-- 销售排行 -->
-        <el-tab-pane label="销售排行" name="ranking">
-          <div class="chart-title">卖家销售额 Top 10</div>
-          <div ref="rankChartRef" style="height: 460px"></div>
-        </el-tab-pane>
-
-        <!-- 评分表现 -->
-        <el-tab-pane label="评分表现" name="review">
-          <div class="chart-title">卖家评分 vs 评论数（Top 20）</div>
-          <div ref="reviewChartRef" style="height: 460px"></div>
-        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -66,7 +66,7 @@ import { getSellers, getSellerStates, getSellerRank, getSellerReview } from '../
 
 const router = useRouter()
 
-const activeTab = ref('list')
+const activeTab = ref('ranking')
 
 // 卖家列表
 const sellers = ref([])
@@ -174,9 +174,13 @@ async function onTabChange(name) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   load()
   loadStates()
+  // 默认 tab 是销售排行，页面加载时就初始化图表
+  await nextTick()
+  rankChart = echarts.init(rankChartRef.value)
+  loadRanking()
 })
 
 onBeforeUnmount(() => {

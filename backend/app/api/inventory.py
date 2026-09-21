@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.response import ok ,ok_page
 from app.schemas.response import ApiResponse
-from app.schemas.inventory import InventoryListResponse ,InventoryitemResponse ,InventoryWarningResponse ,ReplenishResponse ,inventory_logsResponse
-from app.repositories.inventory import get_inventory,adjust_inventory,get_warnings ,get_replenish ,get_inventory_logs
+from app.schemas.inventory import InventoryListResponse ,InventoryitemResponse ,InventoryWarningResponse ,ReplenishResponse ,inventory_logsResponse ,InventoryWarningItem
+from app.repositories.inventory import get_inventory,adjust_inventory,get_warnings ,get_replenish ,get_inventory_logs ,get_data
 from app.schemas.AdjustInventory import AdjustInventory
 from app.core.redis import get_cache, set_cache,delete_cache ,delete_cache_pattern
 
@@ -19,6 +19,11 @@ def list_inventory(db : Session = Depends(get_db) , page : int = 1, page_size: i
     result =  get_inventory(db , page , page_size)
     set_cache(cache_key, result ,expire=600)
     return ok(result)
+
+@router.get('/inventory/detail' ,response_model=ApiResponse[InventoryWarningItem] ,dependencies=[Depends(require_permission("inventory:read"))])
+def inventory_data(product_id : str ,db : Session = Depends(get_db) ):
+    datas = get_data(product_id, db)
+    return ok(datas)
 
 @router.post("/adjust/{product_id}/" ,response_model=ApiResponse[InventoryitemResponse], dependencies=[Depends(require_permission("inventory:adjust"))])
 def list_adjust_inventory(product_id :str , body :AdjustInventory,db : Session = Depends(get_db)):

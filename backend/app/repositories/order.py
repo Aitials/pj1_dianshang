@@ -1,4 +1,4 @@
-from sqlalchemy import select ,func
+from sqlalchemy import select ,func ,distinct
 from sqlalchemy.orm import Session
 from app.models.order import Order
 from app.models.order_payments import OrderPayment
@@ -38,10 +38,10 @@ def get_order_monthly_trend(db: Session):
     stmt = (
         select(
             func.date_format(Order.order_purchase_timestamp, "%Y-%m").label("month"),
-            func.count(Order.order_id).label("order_count"),
+            func.count(distinct(Order.order_id)).label("order_count"),
             func.sum(OrderPayment.payment_value).label("sales"),
         )
-        .join(OrderPayment, OrderPayment.order_id == Order.order_id)
+        .outerjoin(OrderPayment, OrderPayment.order_id == Order.order_id)
         .where(Order.order_status != "canceled")
         .group_by("month")
         .order_by("month")

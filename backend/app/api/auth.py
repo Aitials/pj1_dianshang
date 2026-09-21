@@ -5,6 +5,7 @@ from app.core.security import create_access_token
 from app.db.session import get_db
 from app.schemas.auth import LoginUser, RegisterUser
 from app.services.auth import authenticate_user, register_user
+from app.repositories.permission import get_user_roles
 
 router = APIRouter()
 
@@ -36,5 +37,6 @@ def register(user: RegisterUser, db: Session = Depends(get_db)):
     return {"message": "注册成功", "username": new_user.username}
 
 @router.get("/me")
-def read_me(current_user=Depends(get_current_user)):
-    return {"username": current_user.username}
+def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"username": current_user.username,
+            "role" : get_user_roles(db,current_user.id)}

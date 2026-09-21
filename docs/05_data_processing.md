@@ -87,7 +87,23 @@ MySQL 业务库 (olist_xxx_dataset_clean)
 | products | 32,951 | 32,951 | 类目填 unknown、字段改名 |
 | 其余表 | — | — | 类型规范化（DECIMAL/DATETIME/char） |
 
-## 5. 遗留说明
+## 5. 脚本运行方式
+
+```powershell
+# 前置：backend/.env 已配置 DATABASE_URL（模板见 backend/.env.example）
+.\.venv\Scripts\Activate.ps1
+python data\scripts\clean_fir.py
+python data\scripts\validate_raw.py     # 可选，输出 data/quality/data_quality_stats.md
+```
+
+| 项 | 实现方式 |
+|----|----------|
+| 输入路径 | `BASE_DIR = Path(__file__).resolve().parents[2]`（项目根）→ `RAW_DIR = BASE_DIR / "data" / "raw"`，9 个 CSV 全部由该常量拼接，**不含绝对路径** |
+| 数据库连接 | `load_dotenv(BASE_DIR / "backend" / ".env")` 后 `create_engine(os.getenv("DATABASE_URL"))`，**不含明文密码** |
+| 失败行为 | `DATABASE_URL` 缺失时 `raise SystemExit("未找到 DATABASE_URL，请先在 backend/.env 中配置（可参考 backend/.env.example）")` |
+| 可重跑性 | `to_sql(..., if_exists='append')` 且无清表，**重复执行会重复插入**；重跑前需先 `TRUNCATE` 对应的 9 张 `olist_*_clean` 表 |
+
+## 6. 遗留说明
 
 - 当前实现为"清洗后直接 to_sql 入库"，本地 processed CSV 可由导出脚本补充（`data/processed/`）。
 - category_translation 与 products 的 JOIN 在查询层进行，不在入库时物化英文列。

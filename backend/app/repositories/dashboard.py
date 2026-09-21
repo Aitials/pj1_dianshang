@@ -26,7 +26,7 @@ def count_orders(db : Session ,order_status =None , start_time = None, end_time 
 def avg_reviews(db : Session):
     stmt = select(func.avg(OrderReview.review_score))
     counts = db.execute(stmt)
-    return counts.scalars().one()
+    return round(counts.scalars().one() , 2)
 
 def count_customers(db : Session):
     stmt = select(func.count(distinct(Customer.customer_unique_id)))
