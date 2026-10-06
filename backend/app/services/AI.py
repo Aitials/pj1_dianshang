@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage , HumanMessage
 from sqlalchemy.orm import Session
 from langchain_openai import ChatOpenAI
-from app.tools.dashboard_tools import query_sales ,query_category ,query_product
+from app.db.session import SessionLocal
+from app.tools.dashboard_tools import query_sales ,query_product ,query_category
 from app.tools.order_tools import query_order_status
 from app.tools.inventory_tools import query_inventory_warning
 from app.tools.review_tools import query_review
@@ -12,6 +13,7 @@ from app.tools.logistics_tools import query_logistics
 from app.tools.customer_tools import query_customer
 from app.tools.web_search import query_web
 from app.models.ai_analysis import AiAnalysis
+from langchain.agents import create_agent
 
 #AI系统的提示词
 SYSTEM_PROMPT = """
@@ -49,299 +51,25 @@ zhipu = ChatOpenAI(
     model = 'GLM-4.5-Air'
 )
 
-user_message = input('你好有什么问题想问我的？')
 
-message_list = [
-    SystemMessage(content=SYSTEM_PROMPT),
-    HumanMessage(user_message)
-]
+AGENT = create_agent(
+    model=zhipu,
+    tools=[query_category ,
+           query_sales ,
+           query_product ,
+           query_order_status ,
+           query_inventory_warning,
+           query_review ,
+           query_logistics ,
+           query_customer,
+           query_web],
+    system_prompt=SYSTEM_PROMPT,
+)
 
-tools = [query_customer,query_sales,query_category,query_product,query_order_status,query_inventory_warning,query_review,query_logistics,query_web]
-
-model_with_tools = zhipu.bind_tools(tools)
-response = model_with_tools.invoke(message_list)
-print(response.content)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-
-# =========================
-# 1. 告诉 GLM：有哪些工具可以使用
-# =========================
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "query_sales",
-            "description": "查询电商平台历史销售数据，并分析销售趋势",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_category",
-            "description": "查询商品类别销售额排行",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "top": {
-                        "type": "integer",
-                        "description": "返回销售额最高的商品类别数量"
-                    }
-                },
-                "required": ["top"]
-            }
-        }
-    } ,
-    {
-        "type": "function",
-        "function": {
-            "name": "query_product",
-            "description": "查询商品销售额排行",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "top": {
-                        "type": "integer",
-                        "description": "返回销售额最高的商品数量"
-                    }
-                },
-                "required": ["top"]
-            }
-        }
-    } ,
-    {
-        "type": "function",
-        "function": {
-            "name": "query_order_status",
-            "description": "查询订单的不同状态和数量，返回不同状态的订单类型和此状态的订单数量",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_inventory_warning",
-            "description": "查询库存数量低于预警线的库存商品，返回库存数量低的商品名字清单",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    } ,
-    {
-        "type": "function",
-        "function": {
-            "name": "query_review",
-            "description": "查询全部订单的整体客户评价的平均分，得到整体的评价满意度",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_logistics",
-            "description": "查询物流履约情况，包括准时率、延迟率、平均履约时长等",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
-    
-    {
-        "type": "function",
-        "function": {
-            "name": "query_web",
-            "description": "联网搜索当前电商政策、行业新闻等外部实时信息，用于回答涉及当下政策/新闻的问题",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                    "type": "string",
-                    "description": "要搜索的关键词或问题"
-                    }
-                },
-                "required": ["query"]
-            }
-        }
-    }
-]
-
-
-# =========================
-# 2. 工具名称 → Python实际函数
-# =========================
-
-tools_map = {
-    "query_sales": query_sales,
-    "query_category" : query_category,
-    "query_product" : query_product,
-    "query_order_status" : query_order_status,
-    "query_inventory_warning" : query_inventory_warning,
-    "query_review" : query_review,
-    "query_logistics" : query_logistics,
-    "query_customer" : query_customer,
-    "query_web" : query_web,
-}
-
-
-# =========================
-# 3. AI聊天主流程
-# =========================
 
 def chat(message: str, db: Session):
-
-    # -------------------------
-    # 第一次请求：让 GLM 判断要不要调用工具
-    # -------------------------
-
-    response = client.chat.completions.create(
-        model="GLM-4.5-Air",
-        messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ],
-        tools=tools,
-        tool_choice="auto"
+    result = AGENT.invoke(
+        {"messages": [HumanMessage(content=message)]},
+        context={"session_factory": SessionLocal},
     )
-
-    # 查看 GLM 返回的工具调用
-    print(response.choices[0].message)
-
-    # -------------------------
-    # 4. 获取 GLM 请求调用的工具
-    # -------------------------
-
-    tool_calls = response.choices[0].message.tool_calls
-
-    if not tool_calls:
-        return response.choices[0].message.content
-
-    # -------------------------
-    # 5. 遍历所有工具调用，逐个执行，收集结果
-    # -------------------------
-
-    tool_results = []
-    for tc in tool_calls:
-        tool_name = tc.function.name
-        tool = tools_map[tool_name]
-        arguments = json.loads(tc.function.arguments)
-        result = tool(db, **arguments)
-        print(result)
-        tool_results.append({
-            "id": tc.id,
-            "content": json.dumps(result, ensure_ascii=False, default=str),
-        })
-
-    # -------------------------
-    # 6. 第二次请求：让 GLM 分析所有工具结果
-    # -------------------------
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": message},
-        {
-            "role": "assistant",
-            "content": "",
-            "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.function.name,
-                        "arguments": tc.function.arguments,
-                    },
-                }
-                for tc in tool_calls
-            ],
-        },
-    ]
-    for tr in tool_results:
-        messages.append({
-            "role": "tool",
-            "tool_call_id": tr["id"],
-            "content": tr["content"],
-        })
-
-    final_response = client.chat.completions.create(
-        model="GLM-4.5-Air",
-        messages=messages,
-    )
-
-    # -------------------------
-    # 7. 返回 GLM 最终回答
-    # -------------------------
-
-    final_answer = final_response.choices[0].message.content
-
-    # 记录 AI 问答到 ai_analysis 表
-    record = AiAnalysis(
-        user_id=None,
-        question=message,
-        tool_context=json.dumps(
-            [
-                {
-                    "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments) if tc.function.arguments else {},
-                }
-                for tc in tool_calls
-            ],
-            ensure_ascii=False,
-        ),
-        answer=final_answer,
-    )
-    db.add(record)
-    db.commit()
-
-    return final_answer
-'''
+    return result["messages"][-1].content

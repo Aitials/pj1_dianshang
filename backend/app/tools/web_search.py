@@ -2,9 +2,11 @@ import os
 import hashlib
 from zai import ZhipuAiClient
 from app.core.redis import get_cache, set_cache
+from langchain.tools import tool
 
-
-def query_web(db, query):
+@tool
+def query_web(query : str) -> str :
+    '''联网搜索当前电商政策、行业新闻等外部实时信息，用于回答涉及当下政策/新闻的问题'''
     # 注意：第一个参数必须是 db（和现有流程 tool(db, **arguments) 对齐，虽然这里用不到）
 
     # 1. Redis 缓存 key = ai:web:{query 的 md5}
