@@ -55,7 +55,7 @@ services:
     # 再用下面的 environment 覆盖两个地址：compose 中 environment 的优先级高于 env_file，
     # 所以宿主机 .env 里写的 localhost 不会覆盖成容器内的服务名。
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       DATABASE_URL: mysql+pymysql://root:mysql@mysql:3306/olist?charset=utf8mb4
       REDIS_URL: redis://redis:6379/0
@@ -87,7 +87,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       DATABASE_URL: mysql+pymysql://root:mysql@mysql:3306/olist?charset=utf8mb4
       REDIS_URL: redis://redis:6379/0

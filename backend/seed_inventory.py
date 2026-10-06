@@ -27,9 +27,9 @@ from sqlalchemy.engine import make_url
 
 SEED = 7
 
-# 连接信息不再硬编码：本地跑读 backend/.env，容器里跑读 compose 注入的 DATABASE_URL，
-# 否则容器内 localhost 会指向自身而不是 mysql 服务。
-load_dotenv(Path(__file__).resolve().parent / ".env")
+# 连接信息不再硬编码：本地跑读项目根目录的 .env（与 backend/ 同级），
+# 容器里跑读 compose 注入的 DATABASE_URL，否则容器内 localhost 会指向自身而不是 mysql 服务。
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 _db_url = make_url(os.getenv("DATABASE_URL"))
 CONN = dict(host=_db_url.host, port=_db_url.port or 3306, user=_db_url.username,
             password=_db_url.password, database=_db_url.database, charset="utf8mb4")

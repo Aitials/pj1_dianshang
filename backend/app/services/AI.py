@@ -1,8 +1,9 @@
 import os
 import json
-
+from dotenv import load_dotenv
+from langchain_core.messages import SystemMessage , HumanMessage
 from sqlalchemy.orm import Session
-from zhipuai import ZhipuAI
+from langchain_openai import ChatOpenAI
 from app.tools.dashboard_tools import query_sales ,query_category ,query_product
 from app.tools.order_tools import query_order_status
 from app.tools.inventory_tools import query_inventory_warning
@@ -12,12 +13,7 @@ from app.tools.customer_tools import query_customer
 from app.tools.web_search import query_web
 from app.models.ai_analysis import AiAnalysis
 
-api_key = os.getenv("ZHIPU_API_KEY")
-
-client = ZhipuAI(api_key=api_key)
-
-
-#AI具体提示词
+#AI系统的提示词
 SYSTEM_PROMPT = """
 你是一个电商后台运营助手，负责帮助运营人员分析商品、订单、销售、库存、客户和物流等业务问题。
 
@@ -44,6 +40,57 @@ SYSTEM_PROMPT = """
 3. 可以根据数据进行合理分析和推断，但要明确这是分析或推断，而不是原始事实。
 """
 
+load_dotenv(override=True)
+ZHIPUAPI = os.getenv('ZHIPU_API_KEY')
+BASR_URL = os.getenv('ZHIPU_BASE_URL')
+zhipu = ChatOpenAI(
+    api_key = ZHIPUAPI ,
+    base_url = BASR_URL,
+    model = 'GLM-4.5-Air'
+)
+
+user_message = input('你好有什么问题想问我的？')
+
+message_list = [
+    SystemMessage(content=SYSTEM_PROMPT),
+    HumanMessage(user_message)
+]
+
+tools = [query_customer,query_sales,query_category,query_product,query_order_status,query_inventory_warning,query_review,query_logistics,query_web]
+
+model_with_tools = zhipu.bind_tools(tools)
+response = model_with_tools.invoke(message_list)
+print(response.content)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
 
 # =========================
 # 1. 告诉 GLM：有哪些工具可以使用
@@ -144,18 +191,7 @@ tools = [
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_customer",
-            "description": "查询客户复购情况，包括总客户数、复购客户数、复购率",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    } ,
+    
     {
         "type": "function",
         "function": {
@@ -308,3 +344,4 @@ def chat(message: str, db: Session):
     db.commit()
 
     return final_answer
+'''

@@ -1,3 +1,22 @@
+# 本文件为重建虚拟环境用的依赖清单（uv / pip 均可用）。
+#
+# 相对上一版的三处改动，原因如下：
+# 1. 移除 zhipuai==2.1.5.20250825
+#    它与 zai-sdk 在 PyJWT 上约束互斥：zhipuai 要求 pyjwt>=2.8.0,<2.9.0，
+#    zai-sdk 要求 pyjwt>=2.9.0,<3.0.0，两者交集为空。pip 曾靠"先装后升级"
+#    侥幸共存（pip check 报错），但 uv 是严格解析器，同一份清单里放两个必然失败。
+#    原先由 zhipuai 承担的 chat 调用改由 langchain-openai 接管。
+# 2. PyJWT 由 2.8.0 改为 2.14.0
+#    满足 zai-sdk 的 >=2.9.0，且与当前验证可用的环境一致。
+#    注意：PyJWT 只是传递依赖，本项目的鉴权用的是 python-jose，不读 PyJWT。
+# 3. 新增 langchain-openai==1.6.7
+#    智谱提供 OpenAI 兼容端点，用 ChatOpenAI(base_url=...) 替代 ZhipuAI 客户端。
+#    刻意不装 langchain 主包：它会硬拉 langgraph 整套编排栈（26 个包）。
+#    将来若确实要用 v1 的 create_agent，再单独加 langchain。
+#
+# 注意：切换清单后 app/services/AI.py 仍 import zhipuai，需同步迁移，
+#       否则后端会在 import 阶段崩溃（见下方说明）。
+
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1
@@ -27,6 +46,7 @@ ipython_pygments_lexers==1.1.1
 jedi==0.20.0
 jupyter_client==8.10.0
 jupyter_core==5.9.1
+langchain-openai==1.6.7
 matplotlib-inline==0.2.2
 nest-asyncio2==1.7.2
 numpy==2.5.3
@@ -46,7 +66,7 @@ pycparser==3.0
 pydantic==2.13.5
 pydantic_core==2.46.5
 Pygments==2.21.0
-PyJWT==2.8.0
+PyJWT==2.14.0
 PyMySQL==1.2.0
 pytest==9.1.1
 python-dateutil==2.9.0.post0
@@ -68,4 +88,3 @@ tzdata==2026.3
 uvicorn==0.53.0
 wcwidth==0.8.3
 zai-sdk==0.2.3
-zhipuai==2.1.5.20250825

@@ -342,7 +342,7 @@ sequenceDiagram
 | D-05 | 统一响应 `{code,message,data,request_id}` | 无 `request_id`；8 个接口未包装 | 契约不统一，排障无链路 ID | 统一包装 + 引入 request_id 中间件 |
 | D-06 | Redis 缓存 dashboard / 排行 / 热点查询 | 已实现（9 处 `set_cache` 写入点：dashboard 5 + inventory 3 + AI 联网搜索 1），但无击穿保护、无 Redis 故障兜底 | Redis 不可用时相关接口 500 | 加 try/except 降级为直查 MySQL |
 | D-07 | 分页最大 `page_size` 限制 | `page_params` 定义未使用；`/products` 的 `page/page_size` 必填 | 可被超大分页拖库 | 统一改用 `Depends(page_params)` |
-| D-08 | 依赖可复现（requirements.txt） | ~~`zai`（联网搜索 SDK）未列入~~ **已修复**：已补 `zai-sdk==0.2.3`、`pytest==9.1.1`；同时新增 `backend/.env.example` 作为环境变量模板。仍保留未使用的 `passlib`/`bcrypt` | 已消除 ImportError 风险 | 剩余可选项：清理未使用依赖（requirements.txt 为 `pip freeze` 全量导出，含 jupyter 等冗余） |
+| D-08 | 依赖可复现（requirements.txt） | ~~`zai`（联网搜索 SDK）未列入~~ **已修复**：已补 `zai-sdk==0.2.3`、`pytest==9.1.1`；同时新增 `../.env.example` 作为环境变量模板。仍保留未使用的 `passlib`/`bcrypt` | 已消除 ImportError 风险 | 剩余可选项：清理未使用依赖（requirements.txt 为 `pip freeze` 全量导出，含 jupyter 等冗余） |
 | D-09 | 生产关闭 debug + 结构化日志 | `FastAPI()` 未开 debug，但无日志配置 | 无访问/错误日志 | 接入 uvicorn 日志配置或 logging 模块 |
 | D-10 | Docker Compose 一键启动 | 无 `docker-compose.yml`、无 Dockerfile | 部署验收项未达成 | 补齐 backend/frontend/mysql/redis 四服务编排 |
 | D-11 | 后端配置 CORS 供独立部署 | 未配置 `CORSMiddleware`，仅靠 Vite 代理 | 前端独立域名部署时跨域失败 | 生产环境按白名单开启 CORS |

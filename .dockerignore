@@ -8,7 +8,7 @@ frontend/dist
 
 # 环境变量文件：密钥绝不进镜像，容器内的配置由 docker-compose 的 env_file/environment 注入
 .env
-backend/.env
+.env
 
 # 原始数据集 120MB：只有 loader 服务需要，运行时用 volume 挂载，不进镜像也不进构建上下文
 data/

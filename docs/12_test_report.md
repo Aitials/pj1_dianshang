@@ -217,7 +217,7 @@ flowchart LR
 - **端口避让**：宿主机 `3306` / `6379` 已被本机 MySQL / Redis 占用，故 compose 对外映射 **`3307:3306`** 与 **`6380:6379`**。容器内部仍用标准端口互联。
 - **配置注入优先级**：`backend` 服务同时写了 `env_file: ./backend/.env` 与 `environment`。compose 中 `environment` 优先级**高于** `env_file`，因此 `.env` 里的 `DATABASE_URL=…@localhost…` 会被覆盖为 `…@mysql:3306…`（容器内 `localhost` 指向自身而非 MySQL 容器），而 `SECRET_KEY` / `ZHIPU_API_KEY` 仍从 `.env` 读入，无需写进 compose 文件。
 - **数据初始化独立成 `loader` 服务**：原仓库的 `data/*.sql` 是 **0 字节空文件**，不能用来初始化，因此改为 `loader` 依次执行 ① `python -c 'import app.main'` 触发 `Base.metadata.create_all` 建 ORM 表 → ② `data/scripts/clean_fir.py` 清洗 9 张 CSV 并灌库 → ③ `seed_inventory.py` 生成库存与自洽流水。该服务用 `profiles: ["init"]` 标记，**不会**跟着 `docker compose up` 自动启动。120MB CSV 通过 `./data:/app/data` 运行时挂载，不进镜像。
-- **`clean_fir.py` 非幂等**：内部是 `to_sql(if_exists='append')`，只能对空库跑一次。重复执行会让数据翻倍，需重来时用 `docker compose down -v` 清掉数据卷。`seed_inventory.py` 已从硬编码 `localhost` 改为解析 `DATABASE_URL`（本地读 `backend/.env`，容器里读 compose 注入值）。
+- **`clean_fir.py` 非幂等**：内部是 `to_sql(if_exists='append')`，只能对空库跑一次。重复执行会让数据翻倍，需重来时用 `docker compose down -v` 清掉数据卷。`seed_inventory.py` 已从硬编码 `localhost` 改为解析 `DATABASE_URL`（本地读 `../.env`，容器里读 compose 注入值）。
 
 ### 6.3 启动与验证
 

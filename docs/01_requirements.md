@@ -265,7 +265,7 @@
 | NFR-SEC-01 | 受保护接口必须鉴权 | 部分实现（5 个裸接口 + `/api/ai/chat` 未鉴权，详见 `11_security_design.md`） |
 | NFR-SEC-02 | 密码只存哈希，不存明文 | 已实现（pwdlib Argon2） |
 | NFR-SEC-03 | 关键写操作留审计日志 | 部分实现（改密码未记录；`operation_log` 实测 0 行） |
-| NFR-SEC-04 | 密钥通过 `.env` 管理，不入 Git | 已实现（`backend/.env`） |
+| NFR-SEC-04 | 密钥通过 `.env` 管理，不入 Git | 已实现（`../.env`） |
 
 ### 5.4 可用性（NFR-AVAIL）
 
@@ -289,7 +289,7 @@
 |------|------|------|
 | NFR-MAINT-01 | 分层：Router → Schema → Service → Repository → DB | 已实现（部分简单查询在 api 层直接调 repository） |
 | NFR-MAINT-02 | 统一响应格式 `{code, message, data}` | 部分实现（8 个接口未包装） |
-| NFR-MAINT-03 | 依赖可复现 | 已实现：`requirements.txt` 已包含 `zai-sdk==0.2.3`（`tools/web_search.py` 所需）与 `pytest==9.1.1`；环境变量模板见 `backend/.env.example` |
+| NFR-MAINT-03 | 依赖可复现 | 已实现：`requirements.txt` 已包含 `zai-sdk==0.2.3`（`tools/web_search.py` 所需）与 `pytest==9.1.1`；环境变量模板见 `../.env.example` |
 
 ## 6. 验收标准
 

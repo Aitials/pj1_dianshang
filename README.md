@@ -85,8 +85,8 @@ python -m pytest                                   # 35 passed
 
 注意事项：
 
-- `backend/.env` 必须存在，否则后端与清洗脚本都无法启动；模板见 `backend/.env.example`。
-- `clean_fir.py` 已改为相对路径（按脚本位置推导 `data/raw/`）并从 `backend/.env` 读取连接串，换机器无需改脚本。
+- `.env` 必须存在，否则后端与清洗脚本都无法启动；模板见 `.env.example`。
+- `clean_fir.py` 已改为相对路径（按脚本位置推导 `data/raw/`）并从 `.env` 读取连接串，换机器无需改脚本。
 - 清洗脚本用 `if_exists='append'` 写入，重复执行会重复插入，重跑前请先 `TRUNCATE` 对应的 9 张 `olist_*_clean` 表。
 - 表名统一为 `olist_*_dataset_clean`（business 层）与 `system_*` / `inventory*` / `operation_log` / `ai_analysis`（application 层）。
 - 新注册的账号默认没有任何角色，需管理员在「系统用户管理」页分配角色后才能登录，否则会被提示"账号暂无权限"。

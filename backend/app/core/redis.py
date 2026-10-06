@@ -2,9 +2,15 @@ import os
 import redis
 import json
 import logging
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env 已移到项目根目录（与 backend/ 同级）。这里必须用绝对路径定位，
+# 不能裸用 load_dotenv()：后者依赖当前工作目录，从 backend/ 下启动就读不到。
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 logger = logging.getLogger( "app.redis" )
 REDIS_URL = os.getenv("REDIS_URL")
 

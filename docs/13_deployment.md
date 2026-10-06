@@ -68,7 +68,7 @@ mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS olist DEFAULT CHARACTER SET ut
 
 ### 步骤 2：配置环境变量
 
-在 `backend/` 下创建 `.env`（该文件已被 `.gitignore` 忽略，**不要把真实密钥写进文档或仓库**）。仓库提供了模板 `backend/.env.example`：
+在 `backend/` 下创建 `.env`（该文件已被 `.gitignore` 忽略，**不要把真实密钥写进文档或仓库**）。仓库提供了模板 `../.env.example`：
 
 ```powershell
 Copy-Item backend\.env.example backend\.env
@@ -89,7 +89,7 @@ ZHIPU_API_KEY=<智谱开放平台申请的 API Key>
 | `REDIS_URL` | `app/core/redis.py` | 缓存路径接口 500 |
 | `ZHIPU_API_KEY` | `app/services/AI.py`、`app/tools/web_search.py` | **后端进程无法启动**（客户端在导入期初始化） |
 
-> **本步骤必须在步骤 4（数据清洗）之前完成**：`clean_fir.py` 已改为从 `backend/.env` 读取 `DATABASE_URL`，未配置会直接退出。
+> **本步骤必须在步骤 4（数据清洗）之前完成**：`clean_fir.py` 已改为从 `../.env` 读取 `DATABASE_URL`，未配置会直接退出。
 
 ### 步骤 3：导入建表脚本
 
@@ -218,7 +218,7 @@ server: {
 |------|------|------|------|
 | 建表 DDL | `data/database_create.sql` | 9 张业务表 + 9 个索引 | 可用；应用表由 `create_all` 创建（有意为之） |
 | 原始质量检查 | `data/scripts/validate_raw.py` | 统计 9 张 CSV 的行数/缺失/重复/枚举/时间范围，输出 `data/quality/data_quality_stats.md`；使用相对路径，**可重跑** | 可用 |
-| 清洗入库 | `data/scripts/clean_fir.py` | 清洗后 `to_sql` 直写 MySQL；相对路径 + 读 `backend/.env` 的 `DATABASE_URL` | 可用；**`append` 写入仍不幂等** |
+| 清洗入库 | `data/scripts/clean_fir.py` | 清洗后 `to_sql` 直写 MySQL；相对路径 + 读 `../.env` 的 `DATABASE_URL` | 可用；**`append` 写入仍不幂等** |
 | 库存初始化 | `backend/seed_inventory.py` | 补全 `inventory`、重建 `inventory_log` | 可用；**仍硬编码连接串** |
 | 单元测试 | `backend/tests/` + 根目录 `pytest.ini` | 鉴权/权限/响应体/分页的 pytest 用例，不依赖 MySQL、Redis | 可用，`35 passed` |
 | 本地 processed CSV | `data/processed/` | 存放清洗后的 CSV | **目录不存在**——实际在仓库中只有拼写为 `data/procsessed/` 的**空目录**（疑似笔误），`docs/05_data_processing.md` 与 `README.md` 中承诺的 processed CSV 尚未产出（待补充） |
@@ -232,7 +232,7 @@ server: {
 | `data/scripts/` | `validate_raw.py`、`clean_fir.py`、`test.ipynb`（后两者中 ipynb 已被忽略） |
 | `data/procsessed/` | 空目录（**拼写与 README 不一致**） |
 | `backend/tests/` | `conftest.py`、`test_security.py`、`test_response.py`、`test_api_contract.py` |
-| 根目录 | `pytest.ini`、`requirements.txt`；`backend/.env.example` 为环境变量模板 |
+| 根目录 | `pytest.ini`、`requirements.txt`；`../.env.example` 为环境变量模板 |
 
 ## 6. 待完成的 Docker 化方案
 
@@ -244,7 +244,7 @@ server: {
 | `Dockerfile`（后端/前端） | 不存在 |
 | `docker-compose.yml` | 不存在 |
 | `nginx.conf` | 不存在 |
-| `.env.example` | **已存在**（`backend/.env.example`），总纲 16.1 的 `cp .env.example .env` 可执行 |
+| `.env.example` | **已存在**（`../.env.example`），总纲 16.1 的 `cp .env.example .env` 可执行 |
 | `pytest.ini` / `backend/tests/` | **已存在**，可在构建阶段跑测试作为质量门 |
 
 ### 建议的服务清单
@@ -286,7 +286,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 ### 容器化必须一并解决的问题
 
 1. `ZHIPU_API_KEY` 缺失导致后端起不来 → 需先做 AI 客户端惰性初始化，否则 compose 里 `backend` 容器会反复重启。
-2. ~~`clean_fir.py` 的绝对路径与硬编码连接串~~ **已完成**：脚本现基于 `__file__` 定位项目根、连接串读 `backend/.env` 的 `DATABASE_URL`，容器内可直接执行（注意把 host 指向 `mysql` 服务名）。
+2. ~~`clean_fir.py` 的绝对路径与硬编码连接串~~ **已完成**：脚本现基于 `__file__` 定位项目根、连接串读 `../.env` 的 `DATABASE_URL`，容器内可直接执行（注意把 host 指向 `mysql` 服务名）。
 3. 首次启动初始化耗时较长（清洗 100 万行 geolocation 等），建议做成一次性 job 容器或在文档中说明"首次需手工执行初始化"。
 4. `frontend/dist` 的 `/api` 反向代理必须与 compose 服务名一致（`backend`）。
 5. 应用表由 `uvicorn app.main:app` 导入期 `create_all` 建立 → 容器启动顺序必须是 `backend` 起来之后才可用，不能在 `mysql` 初始化脚本里假设应用表已存在。
@@ -301,8 +301,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 | 前端接口提示"没有权限执行此操作" | 后端返回 **403**：token 有效但角色缺权限（`require_permission`） | 用 `/api/auth/me` 确认角色；核对 `ROLE_MENUS`（admin/operator/warehouse）与后端权限是否对齐 |
 | 接口返回 `Not authenticated` | 未带 `Authorization` 头；`HTTPBearer` 对**缺失凭证返回 401**（实测，非 403），body 为 `{"code":401,"message":"Not authenticated","data":null}` | 检查前端 `request.js` 是否已附加 `Authorization: Bearer <token>` |
 | 总览/库存/AI 联网搜索报 500 | **Redis 未启动**：`get_cache` 直接抛 `ConnectionError`，代码无降级 | 启动 Redis 并确认 `REDIS_URL` 可连通；长期方案是给缓存读写加 try/except（见 `docs/10_ai_design.md` AI-11） |
-| 所有业务接口 500，日志显示连接错误 | MySQL 未启动、连接串错误或库不存在。注意 `create_engine` 在**导入期不建立连接**，因此错误会延迟到第一个请求才暴露 | 核对 `backend/.env` 的 `DATABASE_URL`，用 `mysql -uroot -p olist` 手工验证连通性 |
-| 后端进程启动即退出，报 Key/鉴权相关错误 | 缺少 `ZHIPU_API_KEY`（AI 客户端在导入期初始化） | 补全 `backend/.env`；这是已知缺陷，长期方案为惰性初始化 |
+| 所有业务接口 500，日志显示连接错误 | MySQL 未启动、连接串错误或库不存在。注意 `create_engine` 在**导入期不建立连接**，因此错误会延迟到第一个请求才暴露 | 核对 `../.env` 的 `DATABASE_URL`，用 `mysql -uroot -p olist` 手工验证连通性 |
+| 后端进程启动即退出，报 Key/鉴权相关错误 | 缺少 `ZHIPU_API_KEY`（AI 客户端在导入期初始化） | 补全 `../.env`；这是已知缺陷，长期方案为惰性初始化 |
 | 报 `No module named 'zai'` | 当前环境未装联网搜索 SDK（`requirements.txt` 已声明 `zai-sdk==0.2.3`，通常是旧环境未重装） | `pip install -r requirements.txt`（或单独 `pip install zai-sdk==0.2.3`） |
 | 前端 `/api/**` 404 或跨域报错 | Vite 代理未生效 / 后端不在 8000 / 该端口被旧进程占用 | 检查 `vite.config.js` 的 `proxy.target`；生产环境需 Nginx 反代 `/api` |
 | `npm run dev` 端口变成 5174 | 5173 被占用，Vite 自动顺延 | 代理 target 仍指向 8000，一般不影响；也可先释放 5173 |
@@ -310,7 +310,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 | 中文乱码 | 库/表/连接串字符集不一致 | 建库用 `utf8mb4`，连接串带 `?charset=utf8mb4` |
 | 数据库文件被同步/锁定异常 | 项目曾位于 OneDrive 同步目录（`.venv/pyvenv.cfg` 记录的原始路径为 `C:\Users\Zzz\OneDrive\Desktop\...`） | 建议把项目放到非云同步目录，避免文件锁与同步冲突 |
 | 清洗脚本报文件不存在 | `data/raw/` 下缺少原始 CSV | 从 Kaggle 下载 Olist 数据集并解压到 `data/raw/`（脚本按项目根定位，与脚本所在目录无关） |
-| 清洗脚本报 `未找到 DATABASE_URL` | `backend/.env` 不存在或未配置 `DATABASE_URL` | 参照 `backend/.env.example` 创建并填写（见步骤 2） |
+| 清洗脚本报 `未找到 DATABASE_URL` | `../.env` 不存在或未配置 `DATABASE_URL` | 参照 `../.env.example` 创建并填写（见步骤 2） |
 
 ## 8. 部署检查清单
 
@@ -318,8 +318,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 |---|--------|-------------|------|
 | 1 | 虚拟环境与依赖 | `.\.venv\Scripts\Activate.ps1` 后 `python -V` 正常；`pip install -r requirements.txt` 无报错（已含 `zai-sdk`、`pytest`） | ☐ |
 | 2 | MySQL 已启动且 `olist` 库存在 | `mysql -uroot -p -e "SHOW DATABASES;"` 含 `olist` | ☐ |
-| 3 | `backend/.env` 四项变量齐备 | 参照 `backend/.env.example` 创建；四个变量均非空 | ☐ |
-| 4 | `.env` 未被提交 | `git status` 中不含 `backend/.env`（`.gitignore` 已忽略） | ☐ |
+| 3 | `../.env` 四项变量齐备 | 参照 `../.env.example` 创建；四个变量均非空 | ☐ |
+| 4 | `.env` 未被提交 | `git status` 中不含 `../.env`（`.gitignore` 已忽略） | ☐ |
 | 5 | 9 张业务表 + 索引已导入 | `SHOW TABLES;` 含 9 张 `olist_*_clean` | ☐ |
 | 6 | 原始 CSV 已就位 | `data/raw/` 下 9 个 CSV | ☐ |
 | 7 | 清洗入库完成 | `python data\scripts\clean_fir.py`；orders 99,441 / order_items 112,650 / geolocation 19,015 等行数核对通过 | ☐ |

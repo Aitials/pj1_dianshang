@@ -210,7 +210,7 @@ erDiagram
 |------|------|
 | 密钥写入 `.env` 而非硬编码 | 已实现 |
 | `.env` 是否已被 `.gitignore` 忽略 | **后端密钥已忽略，根目录存在残留**：仓库根目录有 `.gitignore`，第 5 行为 `/backend/.env`，实测 `git check-ignore -v backend/.env` 命中该规则，故真正的密钥文件不入库；但仓库**根目录**另有一个 **0 字节的空 `.env` 被 `git add` 进了暂存区**（`git status` 显示 `AD .env`，文件在磁盘上不存在），该路径未被任何规则忽略，需 `git rm --cached .env` 清理 |
-| 提供 `.env.example` 模板 | **已提供**：`backend/.env.example`（4 个变量名 + 占位值 + 与代码读取位置的对应注释），可 `Copy-Item backend\.env.example backend\.env` 后填值 |
+| 提供 `.env.example` 模板 | **已提供**：`../.env.example`（4 个变量名 + 占位值 + 与代码读取位置的对应注释），可 `Copy-Item backend\.env.example backend\.env` 后填值 |
 | 日志中是否可能打印密钥 | 未发现直接打印密钥；但 `services/AI.py` 存在 `print(response.choices[0].message)` 与 `print(result)`，会把模型输出与工具结果打到 stdout，属**业务内容外泄**风险（R-08） |
 | 密钥读取时机 | `services/AI.py` 在**模块导入期**执行 `api_key = os.getenv("ZHIPU_API_KEY")`，能否取到值取决于导入顺序（`core/security.py` 先触发 `load_dotenv`）。时序脆弱，建议统一到 `core/config.py` 中读取 |
 
@@ -342,7 +342,7 @@ erDiagram
 | R-09 | 提示注入（直接 + 间接）无程序防护 | 可能绕过规则输出错误结论，或受外部网页内容诱导 | 输入侧限制长度、检测明显的提示覆盖模式；工具输出侧做内容截断与结构化裁剪；回答中强制标注来源 | 中 |
 | R-10 | 无 CORS 配置 | 前端独立域名部署时跨域失败 | 按环境白名单配置 `CORSMiddleware` | 中 |
 | R-11 | Token 存 `localStorage` 且无吊销机制，有效期 30 分钟 | XSS 可窃取 token；登出后 token 仍有效 | 改用 HttpOnly Cookie（或缩短有效期 + refresh）；增加 jti 黑名单实现登出吊销 | 中 |
-| R-12 | `backend/.env` 已被 `.gitignore` 忽略；根目录另有一个 0 字节空 `.env` 被 `git add` 进暂存区 | 真实密钥虽不会入库，但根目录 `.env` 路径无忽略规则，后续若被填入密钥将有提交风险 | **部分已修复**：`backend/.env.example` 已创建（仅变量名与占位值）。**待处理**：`git rm --cached .env` 清理暂存区残留，并把 `/.env` 加入忽略规则 | 中 |
+| R-12 | `../.env` 已被 `.gitignore` 忽略；根目录另有一个 0 字节空 `.env` 被 `git add` 进暂存区 | 真实密钥虽不会入库，但根目录 `.env` 路径无忽略规则，后续若被填入密钥将有提交风险 | **部分已修复**：`../.env.example` 已创建（仅变量名与占位值）。**待处理**：`git rm --cached .env` 清理暂存区残留，并把 `/.env` 加入忽略规则 | 中 |
 | R-13 | ~~`requirements.txt` 缺少 `zai`~~ **已修复**（补入 `zai-sdk==0.2.3`）；仍保留未使用的 `passlib`/`bcrypt` | 已无 ImportError 风险；依赖与实现不符易误导（可选清理项） | 剩余：清理未使用依赖 | 低 |
 | R-14 | 无 HTTPS、数据库用 root、Redis 无密码、Swagger 默认开启 | 演示环境可接受，生产环境不安全 | 生产改为 HTTPS + 最小权限数据库账号 + Redis 密码 + 关闭 `/docs` | 低 |
 | R-15 | `SECRET_KEY` 无轮转机制、无长度校验 | 弱密钥或泄露后难以更换 | 启动时校验密钥长度 ≥32 字节；预留双密钥轮转方案 | 低 |
@@ -360,7 +360,7 @@ erDiagram
 | 统一异常处理（参数错误、未登录、无权限、资源不存在、数据库异常、AI 异常） | 已处理参数错误（422）、未登录 / token 无效（401）、无权限（403）、资源不存在（404）；**数据库异常与 AI 异常无专门处理，未捕获异常无兜底** | **部分偏差**（R-06） |
 | 所有关键写操作记录 `operation_log` | 3 个埋点（建用户、分配角色、库存调整）；改密码未记录；表实测 0 行 | **部分偏差**（R-07） |
 | AI 请求记录 question、工具调用摘要、结果状态、回答，避免保存不必要敏感信息 | 已记录 `question`、`tool_context`（工具名 + 参数）、`answer`；**未记录结果状态与 user_id**；无脱敏 | **部分偏差**（R-03、R-07） |
-| 配置通过 `.env` 管理，API Key 不提交 Git | `.env` 管理已实现，`backend/.env` 已被 `.gitignore` 忽略；`backend/.env.example` 模板已提供；根目录仍存在 0 字节空 `.env` 的暂存残留 | **部分偏差**（R-12，仅剩暂存残留待清理） |
+| 配置通过 `.env` 管理，API Key 不提交 Git | `.env` 管理已实现，`../.env` 已被 `.gitignore` 忽略；`../.env.example` 模板已提供；根目录仍存在 0 字节空 `.env` 的暂存残留 | **部分偏差**（R-12，仅剩暂存残留待清理） |
 | 生产环境关闭 debug，开启结构化日志 | 未开 debug；**无结构化日志** | **部分偏差**（R-06） |
 | 默认所有 AI 数据工具只读；AI 不直接执行 UPDATE/DELETE；库存修改必须经人工接口 | 已实现（9 个工具全为查询函数） | 相符 |
 
