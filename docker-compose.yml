@@ -1,12 +1,25 @@
 # 一条命令拉起全栈：MySQL 8 + Redis 7 + FastAPI 后端 + Nginx 托管的前端
 #
-# 首次部署（含数据初始化，只需做一次）：
-#   docker compose up -d mysql redis
-#   docker compose --profile init run --rm loader
-#   docker compose up -d
+# 首次部署（新机器）：
+#   1) 准备配置与数据
+#        cp .env.example .env      # 填入 DATABASE_URL / SECRET_KEY / REDIS_URL / ZHIPU_*
+#        把 Olist 的 9 个原始 CSV 放进 data/raw/
+#   2) docker compose up -d mysql redis
+#        MySQL 首次初始化（数据卷为空时）会自动执行 data/database_create.sql：
+#        建库 + 18 张表 + 全部索引 + RBAC 初始数据（3 个角色 / 12 个权限 / admin 账号）
+#        ⚠️ 只在 mysql_data 卷为空时发生；卷里已有数据不会被重跑
+#   3) docker compose --profile init run --rm loader
+#        灌入 Olist 业务数据（9 张 clean 表）与库存数据。只做一次！
+#   4) docker compose up -d
+#
 # 之后日常启动只要：
 #   docker compose up -d
+#
+# 彻底重置数据库（会清空，之后需重走上面 2)~4)）：
+#   docker compose down -v
+#
 # 访问 http://localhost:8080
+# 初始管理员：admin（密码见 data/database_create.sql 文件头，登录后请立即修改）
 
 services:
   mysql:
@@ -19,9 +32,16 @@ services:
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_general_ci
+      # 与 data/database_create.sql 及本机已有的 olist 库保持一致（MySQL 8 原生默认规则）。
+      # 原先写的是 utf8mb4_general_ci，会让容器里 MYSQL_DATABASE 建出的库排序规则与本地不一致。
+      - --collation-server=utf8mb4_0900_ai_ci
     volumes:
       - mysql_data:/var/lib/mysql
+      # 数据库初始化脚本：仅在 mysql_data 卷为空（首次初始化 / down -v 之后）时执行一次，
+      # 负责建库 + 18 张表 + 索引 + RBAC 初始数据。
+      # 放在 MySQL 侧而不是 loader 里，是为了保证表建出来时就带上索引，
+      # 并且 backend 启动前 RBAC 已就绪（healthcheck 会等初始化结束才放行）。
+      - ./data/database_create.sql:/docker-entrypoint-initdb.d/01_database_create.sql:ro
     # 宿主机 3306 已被本机 MySQL 占用，所以对外映射到 3307 避免冲突
     ports:
       - "3307:3306"
@@ -51,7 +71,7 @@ services:
       dockerfile: backend/Dockerfile
     container_name: olist-backend
     restart: unless-stopped
-    # 先从 backend/.env 读 SECRET_KEY / ZHIPU_API_KEY，
+    # 从仓库根目录的 .env（与 docker-compose.yml 同级）读 SECRET_KEY / ZHIPU_API_KEY 等，
     # 再用下面的 environment 覆盖两个地址：compose 中 environment 的优先级高于 env_file，
     # 所以宿主机 .env 里写的 localhost 不会覆盖成容器内的服务名。
     env_file:
@@ -99,11 +119,14 @@ services:
       mysql:
         condition: service_healthy
     # 三步：
-    #   1) import app.main → 触发 main.py 末尾的 Base.metadata.create_all，把 ORM 表建出来
-    #   2) clean_fir.py → 清洗 CSV 并 to_sql(if_exists="append") 灌入 9 张 clean 表
+    #   1) import app.main → 兜底。正常情况下 18 张表已由 MySQL 首次初始化时的
+    #      /docker-entrypoint-initdb.d/01_database_create.sql 建好，
+    #      这里的 create_all 会检测到表已存在而直接跳过（默认 checkfirst=True）。
+    #   2) clean_fir.py → 清洗 data/raw/*.csv 并 to_sql(if_exists="append") 灌入 9 张 clean 表
     #   3) seed_inventory.py → 为每个商品生成库存与自洽流水
     # 注意：clean_fir.py 用的是 append 而不是 replace，这个服务只能对空库跑一次；
-    #       重复执行会导致数据翻倍（需要重来就 docker compose down -v 清掉数据卷）。
+    #       重复执行会导致数据翻倍（需要重来就先 docker compose down -v 清掉数据卷，
+    #       再按文件顶部 2)~4) 重新走一遍）。
     command: >
       sh -c "python -c 'import app.main' &&
              python /app/data/scripts/clean_fir.py &&

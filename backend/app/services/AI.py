@@ -67,7 +67,7 @@ AGENT = create_agent(
 )
 
 
-def chat(message: str, db: Session):
+def chat(message: str):
     result = AGENT.invoke(
         {"messages": [HumanMessage(content=message)]},
         context={"session_factory": SessionLocal},

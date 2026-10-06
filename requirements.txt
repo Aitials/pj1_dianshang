@@ -1,21 +1,33 @@
-# 本文件为重建虚拟环境用的依赖清单（uv / pip 均可用）。
+# 后端依赖清单（uv / pip 通用）。本文件是「当前验证可用的虚拟环境」的完整冻结，共 104 个包。
 #
-# 相对上一版的三处改动，原因如下：
-# 1. 移除 zhipuai==2.1.5.20250825
-#    它与 zai-sdk 在 PyJWT 上约束互斥：zhipuai 要求 pyjwt>=2.8.0,<2.9.0，
-#    zai-sdk 要求 pyjwt>=2.9.0,<3.0.0，两者交集为空。pip 曾靠"先装后升级"
-#    侥幸共存（pip check 报错），但 uv 是严格解析器，同一份清单里放两个必然失败。
-#    原先由 zhipuai 承担的 chat 调用改由 langchain-openai 接管。
-# 2. PyJWT 由 2.8.0 改为 2.14.0
-#    满足 zai-sdk 的 >=2.9.0，且与当前验证可用的环境一致。
-#    注意：PyJWT 只是传递依赖，本项目的鉴权用的是 python-jose，不读 PyJWT。
-# 3. 新增 langchain-openai==1.6.7
-#    智谱提供 OpenAI 兼容端点，用 ChatOpenAI(base_url=...) 替代 ZhipuAI 客户端。
-#    刻意不装 langchain 主包：它会硬拉 langgraph 整套编排栈（26 个包）。
-#    将来若确实要用 v1 的 create_agent，再单独加 langchain。
+# ===== 相对上一版的变化 =====
+# 1. 新增 langchain==1.4.3 + langgraph==1.2.13 及其整条编排链
+#    原因：AI 助手已从「手写两轮工具循环」迁移到 langchain v1 的 create_agent，
+#    app/services/AI.py 会执行 `from langchain.agents import create_agent`。
+#    少了它容器启动即 ModuleNotFoundError —— 这正是 Docker 报错的原因。
+#    （langgraph-checkpoint / -prebuilt / -sdk 是 langgraph 的硬依赖，一并冻结）
+# 2. 新增 langchain-openai==1.6.7 / openai==3.24.0 / tiktoken==0.14.0 / jiter==0.17.0
+#    智谱走 OpenAI 兼容端点，ChatOpenAI 是真正调用模型的客户端。
+# 3. 新增 rich==15.0.0
+#    被 app/services/AI.py 引用（`from rich import print as rprint`）。
+# 4. 新增 httpx2 / httpcore2（langsmith 的硬依赖）
+#    与已有的 httpx==0.28.1 / httpcore==1.0.9 并存，互不冲突，不要试图合并。
 #
-# 注意：切换清单后 app/services/AI.py 仍 import zhipuai，需同步迁移，
-#       否则后端会在 import 阶段崩溃（见下方说明）。
+# ===== 历史决定（仍然有效，别改回去）=====
+# - 不装 zhipuai：它与 zai-sdk 在 PyJWT 上约束互斥
+#   （zhipuai 要 pyjwt>=2.8.0,<2.9.0；zai-sdk 要 pyjwt>=2.9.0,<3.0.0，交集为空）。
+#   uv 是严格解析器，两个同时出现在本文件里必然解析失败。
+# - PyJWT 固定 2.14.0 是为了满足 zai-sdk（联网搜索 query_web 仍在用它）。
+#   项目自身的鉴权走 python-jose，不读 PyJWT。
+#
+# ===== 注意 =====
+# 本清单在 Windows + Python 3.14.7 上冻结；容器基础镜像是 python:3.14-slim（Linux）。
+# 绝大多数包是纯 Python 或提供 cp314 manylinux wheel。
+# 若 docker build 时报 "no matching distribution" 或 "Building wheel for xxx"，
+# 说明该包缺 Linux 版 wheel，需要单独处理（换版本或补构建工具）。
+#
+# 重新生成本文件（会覆盖以上注释）：
+#   uv pip freeze > requirements.txt
 
 annotated-doc==0.0.5
 annotated-types==0.8.0
@@ -27,29 +39,49 @@ bcrypt==5.0.0
 cachetools==7.2.0
 certifi==2026.7.22
 cffi==2.1.1
+charset-normalizer==3.5.2
 click==8.5.0
 colorama==0.4.6
 comm==0.2.3
 debugpy==1.8.21
+distro==1.9.0
 ecdsa==0.19.2
 executing==2.2.1
 fastapi==0.141.1
 greenlet==3.5.5
 h11==0.16.0
 httpcore==1.0.9
+httpcore2==2.13.1
 httpx==0.28.1
+httpx2==2.13.1
 idna==3.19
 iniconfig==2.3.0
 ipykernel==7.3.0
 ipython==9.17.1
 ipython_pygments_lexers==1.1.1
 jedi==0.20.0
+jiter==0.17.0
+jsonpatch==1.33
+jsonpointer==3.1.1
 jupyter_client==8.10.0
 jupyter_core==5.9.1
+langchain==1.4.3
+langchain-core==1.6.6
 langchain-openai==1.6.7
+langchain-protocol==0.0.19
+langgraph==1.2.13
+langgraph-checkpoint==4.2.0
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.5
+langsmith==0.14.4
+markdown-it-py==4.2.0
 matplotlib-inline==0.2.2
+mdurl==0.1.2
 nest-asyncio2==1.7.2
 numpy==2.5.3
+openai==3.24.0
+orjson==3.12.0
+ormsgpack==1.12.2
 packaging==26.3
 pandas==3.0.5
 pandas-stubs==3.0.5.260730
@@ -72,19 +104,32 @@ pytest==9.1.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 python-jose==3.5.0
+PyYAML==6.0.3
 pyzmq==27.2.0
 redis==8.1.0
+regex==2026.9.29
+requests==2.34.2
+requests-toolbelt==1.0.0
+rich==15.0.0
 rsa==4.9.1
 six==1.17.0
 sniffio==1.3.1
 SQLAlchemy==2.0.52
 stack-data==0.6.3
 starlette==1.6.0
+tenacity==9.1.4
+tiktoken==0.14.0
 tornado==6.5.8
 traitlets==5.16.1
+truststore==0.10.4
 typing-inspection==0.4.4
 typing_extensions==4.16.0
 tzdata==2026.3
+urllib3==2.8.0
+uuid_utils==0.17.1
 uvicorn==0.53.0
 wcwidth==0.8.3
+websockets==16.1.1
+xxhash==4.0.1
 zai-sdk==0.2.3
+zstandard==0.25.0

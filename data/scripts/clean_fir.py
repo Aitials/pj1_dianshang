@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 RAW_DIR = BASE_DIR / "data" / "raw"
 
 # 连接串从 backend/.env 读取，不再把账号密码写在脚本里
-load_dotenv(BASE_DIR / "backend" / ".env")
+load_dotenv(BASE_DIR  / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise SystemExit("未找到 DATABASE_URL，请先在 backend/.env 中配置（可参考 backend/.env.example）")

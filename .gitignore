@@ -1,0 +1,93 @@
+# ==============================================================================
+# .gitignore — 电商运营管理与智能分析平台
+#
+# 约定：以 / 开头的规则只匹配仓库根目录；不带 / 的规则匹配任意层级。
+# 本文件必须提交到仓库（曾经有一条 /.gitignore 规则把自己忽略了，已删除）。
+# ==============================================================================
+
+# ---------- 密钥与环境变量（绝不提交）----------
+# .env.example 是模板、必须提交，所以这里写精确的 .env 而不是 .env.*
+.env
+.env.local
+.env.*.local
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.pyo
+*$py.class
+*.egg-info/
+/build/
+.venv/
+venv/
+
+# ---------- 测试 / 覆盖率 / 静态检查缓存 ----------
+.pytest_cache/
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+
+# ---------- 数据集与本地大文件（合计上百 MB，不入库）----------
+# 9 张原始 CSV 约 138 MB；pbix 约 25 MB；两份原始 SQL 导出
+/data/raw/
+/data/*.pbix
+/data/*.sql
+# 例外：建表脚本属于项目的一部分，必须提交（负向规则要放在正向规则之后）
+!/data/database_create.sql
+
+# ---------- 本地工作文档 / 会话导出 ----------
+# 需求文档、计划书、AI 对话导出等，体积大且与代码无关
+/*.docx
+/*.txt
+/开发对话*.json
+/检查项目*.json
+/AImessages/
+
+# ---------- 前端 ----------
+node_modules/
+/frontend/dist/
+/frontend/node_modules/
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+/data/scripts/test.ipynb
+
+# ---------- 编辑器 / IDE ----------
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+# ---------- 操作系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Office 临时锁文件 ----------
+# Word/Excel/PPT 打开文档时会生成 ~$ 前缀的临时文件
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# ---------- 日志 ----------
+*.log
+logs/
+
+# ---------- 容器 ----------
+# 本地覆盖用的 compose 文件不入库（docker-compose.yml 本身要提交）
+/docker-compose.override.yml
+
+# ==============================================================================
+# 以下文件【应当提交】，不要在下面加忽略规则：
+#   .env.example        环境变量模板
+#   .dockerignore       Docker 构建排除规则
+#   docker-compose.yml  全栈编排
+#   requirements.txt    后端依赖清单
+#   pytest.ini          测试配置
+#   uv.lock             （若将来切到 uv 项目模式）依赖锁文件
+#   .python-version     （若将来加上）Python 版本锚点
+# ==============================================================================

@@ -10,5 +10,5 @@ from app.core.response import ok, ok_page
 from app.schemas.response import ApiResponse, PageData
 
 @router.post("/chat" ,response_model=ApiResponse[AIResponse] , dependencies=[Depends(require_permission("ai:chat"))])
-def talk(message: AIRequest , db: Session = Depends(get_db)):
-    return ok({"answer":chat(message.message ,db)})
+def talk(message: AIRequest):
+    return ok({"answer":chat(message.message)})
