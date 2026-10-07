@@ -7,8 +7,6 @@ from langchain.tools import tool
 @tool
 def query_web(query : str) -> str :
     '''联网搜索当前电商政策、行业新闻等外部实时信息，用于回答涉及当下政策/新闻的问题'''
-    # 注意：第一个参数必须是 db（和现有流程 tool(db, **arguments) 对齐，虽然这里用不到）
-
     # 1. Redis 缓存 key = ai:web:{query 的 md5}
     key = "ai:web:" + hashlib.md5(query.encode("utf-8")).hexdigest()
 

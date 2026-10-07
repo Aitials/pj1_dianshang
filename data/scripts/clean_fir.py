@@ -32,7 +32,7 @@ def get_mode(ser):
     if m.empty:
         return None
     return m.iloc[0]
-geo = geo.groupby('geolocation_zip_code_prefix').agg({'geolocation_lat':'mean','geolocation_lng':'mean','geolocation_city':get_mode,'geolocation_state':get_mode}).reset_index()
+geo = geo.groupby('geolocation_zip_code_prefix').agg({'geolocation_lat':'mean','geolocation_lng':'','geolocation_city':get_mode,'geolocation_state':get_mode}).reset_index()
 geo.to_sql('olist_geolocation_dataset_clean', con=engine, index=False, if_exists='append', chunksize=1000)
 print('olist_geolocation_dataset_clean写入成功！')
 
