@@ -51,6 +51,8 @@ htmlcov/
 node_modules/
 /frontend/dist/
 /frontend/node_modules/
+# 根目录曾误生成一个空 lockfile（前端真正的 lockfile 在 /frontend/ 下），不入库
+/package-lock.json
 
 # ---------- Jupyter ----------
 .ipynb_checkpoints/

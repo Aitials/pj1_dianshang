@@ -16,6 +16,7 @@ from app.tools.web_search import query_web
 from app.models.ai_analysis import AiAnalysis
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.postgres import PostgresSaver
 
 #AI系统的提示词
 SYSTEM_PROMPT = f"""
@@ -55,8 +56,11 @@ zhipu = ChatOpenAI(
     model = 'GLM-4.5-Air'
 )
 
-checkpointer = InMemorySaver()
+AGENT_DB_URL = os.getenv('AGENT_DB_URL')
+checkpointer_cm = PostgresSaver.from_conn_string(AGENT_DB_URL)
+checkpointer = checkpointer_cm.__enter__()
 
+checkpointer.setup()
 
 AGENT = create_agent(
     model=zhipu,
