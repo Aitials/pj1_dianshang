@@ -6,6 +6,7 @@ import pytest
 from jose import jwt
 
 from app.core.security import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
     ALGORITHM,
     SECRET_KEY,
     create_access_token,
@@ -46,11 +47,17 @@ def test_token_uses_hs256_algorithm():
     assert header["alg"] == ALGORITHM == "HS256"
 
 
-def test_token_expires_in_30_minutes():
+def test_token_expires_in_configured_window():
+    """有效期由 ACCESS_TOKEN_EXPIRE_MINUTES 决定（当前 8 小时），断言以常量为准。
+
+    特意不写死数字：改有效期只需动 security.py 里的常量，这条用例自动跟随。
+    """
     payload = jwt.decode(create_access_token("admin"), SECRET_KEY, algorithms=[ALGORITHM])
     remaining = datetime.fromtimestamp(payload["exp"], tz=timezone.utc) - datetime.now(timezone.utc)
     # 编码耗时忽略不计，给 1 分钟余量
-    assert timedelta(minutes=29) < remaining <= timedelta(minutes=30)
+    assert timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES - 1) < remaining <= timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
 
 
 def test_decode_rejects_tampered_token():

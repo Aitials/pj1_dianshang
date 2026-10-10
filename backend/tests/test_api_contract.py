@@ -47,11 +47,16 @@ def test_valid_token_resolves_existing_user(client, dummy_db, fake_user, monkeyp
     assert seen["username"] == "tester"
 
 
-def test_valid_token_for_unknown_user_is_401(client, dummy_db, monkeypatch):
+def test_valid_token_for_unknown_user_is_403(client, dummy_db, monkeypatch):
+    """token 有效但用户查不到（账号被删/停用）→ 403，不能是 401。
+
+    前端把 401 一律当作"登录过期"处理：清空登录态并强制跳登录页。
+    若这里返回 401，用户只会看到一句提示然后被静默登出，无法理解原因。
+    """
     monkeypatch.setattr("app.api.deps.get_user", lambda db, username: None)
     resp = client.get("/need-login", headers=auth_header("ghost"))
-    assert resp.status_code == 401
-    assert resp.json()["message"] == "用户不存在"
+    assert resp.status_code == 403
+    assert resp.json() == {"code": 403, "message": "账号不存在或已被停用", "data": None}
 
 
 def test_token_signed_with_other_key_is_401(client):

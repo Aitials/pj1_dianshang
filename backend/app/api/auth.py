@@ -40,3 +40,18 @@ def register(user: RegisterUser, db: Session = Depends(get_db)):
 def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     return {"username": current_user.username,
             "role" : get_user_roles(db,current_user.id)}
+
+
+@router.post("/refresh")
+def refresh(current_user=Depends(get_current_user)):
+    """用当前仍然有效的 token 换一个新 token（滑动续期）。
+
+    刻意保持无状态：不引入 refresh token、不存 Redis、不做吊销。
+    代价是**只能在旧 token 尚未过期时使用**——前端在请求发出前检查 exp，
+    剩余不足阈值时先调本接口续签、再发原请求。旧 token 一旦真的过期，
+    本接口自身也会 401，此时只能重新登录（前端会带 redirect 回跳原页面）。
+    """
+    return {
+        "access_token": create_access_token(current_user.username),
+        "token_type": "bearer",
+    }

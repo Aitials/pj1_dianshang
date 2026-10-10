@@ -60,19 +60,29 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Shop, User, Lock } from '@element-plus/icons-vue'
 import { login, register } from '../api/auth'
 import { useAuthStore, ROLE_MENUS } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const loading = ref(false)
 const showRegister = ref(false)
 const form = reactive({ username: '', password: '' })
 const regForm = reactive({ username: '', password: '' })
+
+// token 过期被踢回登录页时，request.js 会带上 redirect=<原地址>。
+// 只接受站内路径（单个 / 开头且非 //），防止开放重定向漏洞。
+function resolveRedirect() {
+  const raw = route.query.redirect
+  if (typeof raw !== 'string') return ''
+  if (!raw.startsWith('/') || raw.startsWith('//')) return ''
+  return raw
+}
 
 async function handleLogin() {
   if (!form.username || !form.password) {
@@ -90,9 +100,11 @@ async function handleLogin() {
       return
     }
     ElMessage.success('登录成功')
-    // 跳转到该角色第一个可访问菜单（避免 warehouse 无 dashboard 权限还跳过去弹错误）
+    // 优先回到被踢出前的页面（跨角色切换时该页可能无权限，
+    // 此时路由守卫会再拦一次并给出提示，属于预期行为）；
+    // 否则退回到该角色第一个可访问菜单（避免 warehouse 无 dashboard 权限还跳过去弹错误）
     const allowed = ROLE_MENUS[role] || []
-    router.push(allowed[0] || '/dashboard')
+    router.push(resolveRedirect() || allowed[0] || '/dashboard')
   } finally {
     loading.value = false
   }
